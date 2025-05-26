@@ -1,8 +1,14 @@
-import axios from 'axios';
+// filepath: cricket-ui/src/api.js
+import axios from "axios";
+import { API_URL } from '@env';
 
-const api = axios.create({
-    baseURL: 'http://localhost:5000/api', // Replace with IP for mobile
-    headers: { 'Content-Type': 'application/json' }
-});
+const API = axios.create({ baseURL: API_URL });
 
-export default api;
+export const register = (email, password, role) =>
+    API.post("/auth/register", { email, password, role });
+
+export const login = (email, password) =>
+    API.post("/auth/login", { email, password });
+
+export const fetchStudentData = (id) => API.get(`/students/${id}`);
+export const fetchCoachData = (id) => API.get(`/coaches/${id}`);
