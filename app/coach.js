@@ -14,7 +14,11 @@ export default function Coach() {
       <Text style={styles.name}>Archit</Text>
       <Text style={styles.role}>Coach</Text>
       <View style={styles.menu}>
-        <MenuItem icon="👤" label="Personal Information" />
+        <MenuItem
+          icon="👤"
+          label="Personal Information"
+          onPress={() => router.push('/pi')}
+        />
         <MenuItem icon="🎓" label="Students" />
         <MenuItem icon="🎬" label="All videos" />
         <MenuItem icon="📷" label="All Pictures" />
@@ -25,9 +29,9 @@ export default function Coach() {
   );
 }
 
-function MenuItem({ icon, label }) {
+function MenuItem({ icon, label, onPress }) {
   return (
-    <TouchableOpacity style={styles.menuItem}>
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <Text style={styles.menuIcon}>{icon}</Text>
       <Text style={styles.menuLabel}>{label}</Text>
     </TouchableOpacity>

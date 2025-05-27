@@ -18,7 +18,7 @@ export default function Register() {
         try {
             // Adjust your backend to accept these fields if needed
             await axios.post('http://192.168.2.15:5000/auth/register', {
-                userName,
+                userName: userId,
                 firstName,
                 lastName,
                 email,

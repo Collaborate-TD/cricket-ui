@@ -1,21 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import jwtDecode from 'jwt-decode';
+import { getToken } from '../utils/tokenStorage'; // adjust path if needed
+
 
 export default function PersonalInfo() {
   const router = useRouter();
-  const userId = 'USER_ID_HERE'; // Replace with actual user ID or get from context/auth
   const [loading, setLoading] = useState(true);
   const [firstName, setFirstName] = useState('');
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState('');
 
   useEffect(() => {
-    // Fetch user data from API
     const fetchData = async () => {
       try {
-        const res = await axios.get(`http://192.168.2.15:5000/api/users/${userId}`);
+        // 1. Get token from storage
+        const token = await getToken();
+        
+        if (!token) throw new Error('No token found');
+        // 2. Decode token to get user info
+        const user = jwtDecode(token);
+        setUserId(user.userId); // or user.id, depending on your backend
+
+        // 3. Fetch user data from API
+        const res = await axios.get(`http://192.168.2.15:5000/api/user/details/${user.userId}`);
         setFirstName(res.data.firstName);
         setUserName(res.data.userName);
         setEmail(res.data.email);

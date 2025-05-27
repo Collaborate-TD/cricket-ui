@@ -14,7 +14,11 @@ export default function Student() {
       <Text style={styles.name}>Brian</Text>
       <Text style={styles.role}>Student</Text>
       <View style={styles.menu}>
-        <MenuItem icon="👤" label="Personal Information" />
+        <MenuItem
+          icon="👤"
+          label="Personal Information"
+          onPress={() => router.push('/pi')}
+        />
         <MenuItem icon="🧑‍🏫" label="Coaches" />
         <MenuItem icon="🎬" label="All videos" />
         <MenuItem icon="📷" label="All Pictures" />
@@ -25,9 +29,9 @@ export default function Student() {
   );
 }
 
-function MenuItem({ icon, label }) {
+function MenuItem({ icon, label, onPress }) {
   return (
-    <TouchableOpacity style={styles.menuItem}>
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <Text style={styles.menuIcon}>{icon}</Text>
       <Text style={styles.menuLabel}>{label}</Text>
     </TouchableOpacity>

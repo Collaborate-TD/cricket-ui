@@ -4,6 +4,9 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import jwtDecode from 'jwt-decode';
+import { setToken } from '../utils/tokenStorage';
 
 export default function Login() {
     const router = useRouter();
@@ -12,11 +15,18 @@ export default function Login() {
 
     const onLogin = async () => {
         try {
-            const res = await axios.post('http://192.168.2.15:5000/auth/login', {
-                email,
+            const res = await axios.post('http://127.0.0.1:5000/auth/login', {
+                userData: email,
                 password,
             });
-            // Assume res.data.role is 'student' or 'coach'
+
+            // Save token
+            await setToken(res.data.token);
+            console.log('Token:', res.data.token);
+
+            // Use role from response
+            console.log('Role:', res.data.role);
+
             if (res.data.role === 'student') {
                 router.replace('/student');
             } else if (res.data.role === 'coach') {
@@ -56,3 +66,4 @@ const styles = StyleSheet.create({
     link: { marginTop: 20 },
     linkText: { color: '#1976d2', textAlign: 'center' },
 });
+
