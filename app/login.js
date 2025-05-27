@@ -1,21 +1,31 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
-import { handleLogin } from '../controllers/authController';
+import axios from 'axios';
+import { useRouter } from 'expo-router';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
-import { router } from 'expo-router';
 
 export default function Login() {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
     const onLogin = async () => {
-        const res = await handleLogin(email, password);
-        if (res.success) {
-            Alert.alert('Success', `Logged in as ${res.data.role}`);
-            // navigation logic based on role
-        } else {
-            Alert.alert('Login Failed', res.error);
+        try {
+            const res = await axios.post('http://192.168.2.15:5000/auth/login', {
+                email,
+                password,
+            });
+            // Assume res.data.role is 'student' or 'coach'
+            if (res.data.role === 'student') {
+                router.replace('/student');
+            } else if (res.data.role === 'coach') {
+                router.replace('/coach');
+            } else {
+                Alert.alert('Login Failed', 'Unknown role');
+            }
+        } catch (err) {
+            Alert.alert('Login Failed', err.response?.data?.message || 'Server error');
         }
     };
 
@@ -27,12 +37,12 @@ export default function Login() {
             {/* {Platform.OS === 'web' && <Text>You are using Web</Text>}
                     {Platform.OS === 'ios' && <Text>You're on iOS!</Text>} */}
 
-            <CustomInput placeholder="Email" value={email} onChangeText={setEmail} />
+            <CustomInput placeholder="Email / User Name" value={email} onChangeText={setEmail} />
             <CustomInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
             <CustomButton title="Sign In" onPress={onLogin} />
             <TouchableOpacity onPress={() => router.replace('/register')} style={styles.link}>
-                            <Text style={styles.linkText}>Create an account? Register</Text>
-                        </TouchableOpacity>
+                <Text style={styles.linkText}>Create an account? Register</Text>
+            </TouchableOpacity>
         </View>
     );
 }
