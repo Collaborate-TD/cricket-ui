@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
 import { handleLogin } from '../controllers/authController';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import { router } from 'expo-router';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -29,6 +30,9 @@ export default function Login() {
             <CustomInput placeholder="Email" value={email} onChangeText={setEmail} />
             <CustomInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
             <CustomButton title="Sign In" onPress={onLogin} />
+            <TouchableOpacity onPress={() => router.replace('/register')} style={styles.link}>
+                            <Text style={styles.linkText}>Create an account? Register</Text>
+                        </TouchableOpacity>
         </View>
     );
 }

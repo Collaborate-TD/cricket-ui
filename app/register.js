@@ -26,9 +26,43 @@ export default function Register() {
             <Text style={styles.title}>Register</Text>
             <CustomInput placeholder="Email" value={email} onChangeText={setEmail} />
             <CustomInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-            <CustomInput placeholder="Role (student or coach)" value={role} onChangeText={setRole} />
+            {/* <CustomInput placeholder="Role (student or coach)" value={role} onChangeText={setRole} /> */}
+            <View style={styles.roleContainer}>
+        <TouchableOpacity
+          style={[
+            styles.roleButton,
+            role === 'student' && styles.roleButtonSelected,
+          ]}
+          onPress={() => setRole('student')}
+        >
+          <Text
+            style={[
+              styles.roleButtonText,
+              role === 'student' && styles.roleButtonTextSelected,
+            ]}
+          >
+            Student
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.roleButton,
+            role === 'coach' && styles.roleButtonSelected,
+          ]}
+          onPress={() => setRole('coach')}
+        >
+          <Text
+            style={[
+              styles.roleButtonText,
+              role === 'coach' && styles.roleButtonTextSelected,
+            ]}
+          >
+            Coach
+          </Text>
+        </TouchableOpacity>
+       </View>     
             <CustomButton title="Create Account" onPress={onRegister} />
-            <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.link}>
+            <TouchableOpacity onPress={() => router.replace('/login')} style={styles.link}>
                 <Text style={styles.linkText}>Already have an account? Login</Text>
             </TouchableOpacity>
         </View>
@@ -40,4 +74,28 @@ const styles = StyleSheet.create({
     title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
     link: { marginTop: 20 },
     linkText: { color: '#1976d2', textAlign: 'center' },
+    roleButton: {
+    borderWidth: 1,
+    borderColor: '#1976d2',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginHorizontal: 5,
+  },
+  roleContainer: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  marginBottom: 20,
+},
+  roleButtonSelected: {
+    backgroundColor: '#1976d2',
+  },
+  roleButtonText: {
+    color: '#1976d2',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  roleButtonTextSelected: {
+    color: '#fff',
+  },
 });
