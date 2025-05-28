@@ -1,26 +1,24 @@
-import React from 'react';
-// import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../utils/tokenStorage';
 import { removeToken } from '../utils/tokenStorage';
 
 export default function Coach() {
    const router = useRouter();
-  // const router = useRouter();
-  // const [firstName, setFirstName] = useState('');
+  const [firstName, setFirstName] = useState('');
 
-  // useEffect(() => {
-  //   const fetchName = async () => {
-  //     const token = await getToken();
-  //     if (token) {
-  //       const user = jwtDecode(token);
-  //       setFirstName(user.userName); // This comes from your JWT payload
-  //     }
-  //   };
-  //   fetchName();
-  // }, []);
+  useEffect(() => {
+    const fetchName = async () => {
+      const token = await getToken();
+      if (token) {
+        const user = jwtDecode(token);
+        setFirstName(user.firstName); // This comes from your JWT payload
+      }
+    };
+    fetchName();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -34,7 +32,7 @@ export default function Coach() {
   <Text style={styles.closeText}>Sign-out</Text>
 </TouchableOpacity>
       <View style={styles.avatar} />
-      <Text style={styles.name}>Archit</Text>
+      <Text style={styles.name}>{firstName}</Text>
       {/* <Text style={styles.name}>{firstName}</Text> */}
       <Text style={styles.role}>Coach</Text>
       <View style={styles.menu}>

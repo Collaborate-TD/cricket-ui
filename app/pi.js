@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
-import jwtDecode from 'jwt-decode';
+// import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import { getToken } from '../utils/tokenStorage';
+import { getUserDetails, updateUser } from '../services/api.js';
 
 export default function PersonalInfo() {
   const router = useRouter();
@@ -20,15 +22,21 @@ export default function PersonalInfo() {
     const fetchData = async () => {
       try {
         const token = await getToken();
-        if (!token) throw new Error('No token found');
-        const user = jwtDecode(token);
-        setUserId(user.id || user.userId || user._id);
+        console.log('Token:', token);
+        try {
+          const user = jwtDecode(token);
+          console.log('Decoded user:', user);
+          setUserId(user.id || user.userId || user._id);
 
-        const res = await axios.get(`http://127.0.0.1:5000/api/user/details/${user.id || user.userId || user._id}`);
-        setFirstName(res.data.firstName || '');
-        setLastName(res.data.lastName || '');
-        setUserName(res.data.userName || '');
-        setEmail(res.data.email || '');
+          const res = await getUserDetails(user.id || user.userId || user._id);
+          setFirstName(res.data.firstName || '');
+          setLastName(res.data.lastName || '');
+          setUserName(res.data.userName || '');
+          setEmail(res.data.email || '');
+        } catch (err) {
+          console.log('JWT Decode Error:', err.message);
+          Alert.alert('Error', 'Invalid token');
+        }
       } catch (err) {
         Alert.alert('Error', 'Failed to fetch user data');
       } finally {
@@ -40,8 +48,8 @@ export default function PersonalInfo() {
 
   const onSave = async () => {
     try {
-      await axios.put(`http://127.0.0.1:5000/api/users/${userId}`, {
-        firstName,
+      await updateUser(userId, {
+        firstName,  
         lastName,
         userName,
       });

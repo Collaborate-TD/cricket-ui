@@ -7,6 +7,7 @@ import CustomButton from '../components/CustomButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import jwtDecode from 'jwt-decode';
 import { setToken } from '../utils/tokenStorage';
+import { login } from '../services/api';
 
 export default function Login() {
     const router = useRouter();
@@ -15,10 +16,7 @@ export default function Login() {
 
     const onLogin = async () => {
         try {
-            const res = await axios.post('http://127.0.0.1:5000/auth/login', {
-                userData: email,
-                password,
-            });
+            const res = await login(email, password);
 
             // Save token
             await setToken(res.data.token);
