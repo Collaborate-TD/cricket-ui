@@ -16,3 +16,11 @@ export const getToken = async () => {
     return await AsyncStorage.getItem('token');
   }
 };
+
+export const removeToken = async () => {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem('token');
+  } else {
+    await AsyncStorage.removeItem('token');
+  }
+};
