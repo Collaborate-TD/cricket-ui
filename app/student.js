@@ -1,24 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { removeToken } from '../utils/tokenStorage';
+import { jwtDecode } from 'jwt-decode';
+import { getToken, removeToken } from '../utils/tokenStorage';
 
 export default function Student() {
   const router = useRouter();
+  const [firstName, setFirstName] = useState('');
+
+  useEffect(() => {
+    const fetchName = async () => {
+      const token = await getToken();
+      if (token) {
+        const user = jwtDecode(token);
+        setFirstName(user.firstName);
+      }
+    };
+    fetchName();
+  }, []);
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.closeButton}
         onPress={async () => {
-          await removeToken(); // Clear the token
-          router.replace('/login'); // Redirect to login
+          await removeToken();
+          router.replace('/login');
         }}
       >
         <Text style={styles.closeText}>Sign-out</Text>
       </TouchableOpacity>
       <View style={styles.avatar} />
-      <Text style={styles.name}>Brian</Text>
+      <Text style={styles.name}>{firstName}</Text>
       <Text style={styles.role}>Student</Text>
       <View style={styles.menu}>
         <MenuItem
@@ -26,10 +39,14 @@ export default function Student() {
           label="Personal Information"
           onPress={() => router.push('/pi')}
         />
-        <MenuItem icon="🧑‍🏫" label="Coaches" />
+        <MenuItem
+          icon="🏏"
+          label="Coaches"
+          onPress={() => router.push('/coach-list')}
+        />
         <MenuItem icon="🎬" label="All videos" />
         <MenuItem icon="📷" label="All Pictures" />
-        <MenuItem icon="🏏" label="Drills" />
+        <MenuItem icon="❤️" label="Favourites" />
         <MenuItem icon="⚙️" label="Settings" />
       </View>
     </View>

@@ -4,6 +4,7 @@ import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import { register } from '../services/api';
 
 export default function Register() {
     const router = useRouter();
@@ -17,14 +18,15 @@ export default function Register() {
     const onRegister = async () => {
         try {
             // Adjust your backend to accept these fields if needed
-            await axios.post('http://192.168.2.15:5000/auth/register', {
+            const data = {
                 userName: userId,
                 firstName,
                 lastName,
                 email,
                 password,
                 role,
-            });
+            };
+            await register(data);
             Alert.alert('Success', 'Registered successfully!');
             router.replace('/login');
         } catch (err) {

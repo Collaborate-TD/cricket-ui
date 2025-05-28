@@ -41,7 +41,8 @@ export default function Coach() {
           label="Personal Information"
           onPress={() => router.push('/pi')}
         />
-        <MenuItem icon="🎓" label="Students" />
+        {/* <MenuItem icon="🎓" label="Students" /> */}
+        <MenuItem icon="🎓" label="Students" onPress={() => router.push('/student-list')} />
         <MenuItem icon="🎬" label="All videos" />
         <MenuItem icon="📷" label="All Pictures" />
         <MenuItem icon="❤️" label="Favourites" />

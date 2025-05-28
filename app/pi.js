@@ -26,9 +26,11 @@ export default function PersonalInfo() {
         try {
           const user = jwtDecode(token);
           console.log('Decoded user:', user);
-          setUserId(user.id || user.userId || user._id);
-
+          const id = user.id || user.userId || user._id;
+          setUserId(id);
+          // console.log('User ID:', userId); // This will show the correct value
           const res = await getUserDetails(user.id || user.userId || user._id);
+          console.log('User Details:', res.data);
           setFirstName(res.data.firstName || '');
           setLastName(res.data.lastName || '');
           setUserName(res.data.userName || '');
