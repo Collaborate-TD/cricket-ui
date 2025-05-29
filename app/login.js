@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
-import axios from 'axios';
 import { useRouter } from 'expo-router';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import jwtDecode from 'jwt-decode';
 import { setToken } from '../utils/tokenStorage';
 import { login } from '../services/api';
+import { showAlert } from '../utils/alertMessage';
 
 export default function Login() {
     const router = useRouter();
@@ -30,10 +28,12 @@ export default function Login() {
             } else if (res.data.role === 'coach') {
                 router.replace('/coach');
             } else {
-                Alert.alert('Login Failed', 'Unknown role');
+                showAlert('Login Failed', 'Unknown role');
             }
         } catch (err) {
-            Alert.alert('Login Failed', err.response?.data?.message || 'Server error');
+            // Axios error: err.response contains backend response
+            const message = err.response?.data?.message || 'Server error';
+            showAlert('Login Failed', message);
         }
     };
 

@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
 import { register } from '../services/api';
+import { showAlert } from '../utils/alertMessage';
 
 export default function Register() {
     const router = useRouter();
@@ -27,10 +27,10 @@ export default function Register() {
                 role,
             };
             await register(data);
-            Alert.alert('Success', 'Registered successfully!');
+            showAlert('Success', 'Registered successfully!');
             router.replace('/login');
         } catch (err) {
-            Alert.alert('Registration Failed', err.response?.data?.message || 'Error registering');
+            showAlert('Registration Failed', err.response?.data?.message || 'Error registering');
         }
     };
 
