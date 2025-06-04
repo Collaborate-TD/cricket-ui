@@ -32,21 +32,29 @@ export default function StudentRequests() {
     fetchRequests();
   }, []);
 
-  const handleAccept = async (requestId) => {
+  // Accept student request
+  const handleAccept = async (studentId) => {
     try {
-      await acceptStudentRequest(requestId);
-      setRequests(requests.filter(r => r._id !== requestId));
+      await acceptStudentRequest({ approverId: coachId, requesterId: studentId });
+      setRequests(requests.filter(r => r.studentId !== studentId));
+      // setRequests(requests.filter(r => r._id !== studentId));
       Alert.alert('Accepted', 'Student request accepted.');
     } catch (err) {
       Alert.alert('Error', 'Failed to accept request');
     }
   };
 
+  // Decline student request
   const handleDecline = async () => {
+    if (!declineModal.requestId) {
+      Alert.alert('Error', 'Student ID is missing for this request.');
+      return;
+    }
+
+    console.log('Decline payload:', { approverId: coachId, requesterId: declineModal.requestId, feedback });
     try {
-      await declineStudentRequest(declineModal.requestId, feedback);
-      setRequests(requests.filter(r => r._id !== declineModal.requestId));
-      setDeclineModal({ visible: false, requestId: null });
+      await declineStudentRequest({ approverId: coachId, requesterId: declineModal.requestId, feedback });
+      setRequests(requests.filter(r => r.studentId !== declineModal.requestId));
       setFeedback('');
       Alert.alert('Declined', 'Student request declined.');
     } catch (err) {
@@ -87,12 +95,12 @@ export default function StudentRequests() {
               <Text style={styles.studentInfo}>Email: {item.studentEmail}</Text>
               <Text style={styles.studentInfo}>User ID: {item.studentId}</Text>
             </View>
-            <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(item._id)}>
+            <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(item.studentId)}>
               <Text style={styles.acceptBtnText}>Accept</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.declineBtn}
-              onPress={() => setDeclineModal({ visible: true, requestId: item._id })}
+              onPress={() => setDeclineModal({ visible: true, requestId: item.studentId })} // also update here
             >
               <Text style={styles.declineBtnText}>Decline</Text>
             </TouchableOpacity>
