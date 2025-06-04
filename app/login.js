@@ -7,14 +7,34 @@ import { setToken } from '../utils/tokenStorage';
 import { login } from '../services/api';
 import { showAlert } from '../utils/alertMessage';
 
+function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validatePassword(password) {
+    // At least 6 chars, one number, one special char
+    return /^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{6,}$/.test(password);
+}
+
 export default function Login() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
+    const [userData, setUserData] = useState('');
     const [password, setPassword] = useState('');
+    const [errors, setErrors] = useState({});
+
+    const validate = () => {
+        const newErrors = {};
+        if (!userData.trim()) newErrors.userData = "Username or Email is required";
+        if (!password.trim()) newErrors.password = "Password is required";
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const onLogin = async () => {
+        if (!validate()) return;
+
         try {
-            const res = await login(email, password);
+            const res = await login(userData, password);
 
             // Save token
             await setToken(res.data.token);
@@ -45,11 +65,29 @@ export default function Login() {
             {/* {Platform.OS === 'web' && <Text>You are using Web</Text>}
                     {Platform.OS === 'ios' && <Text>You're on iOS!</Text>} */}
 
-            <CustomInput placeholder="Email / User Name" value={email} onChangeText={setEmail} />
-            <CustomInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+            <CustomInput 
+                placeholder="Username or Email" 
+                value={userData} 
+                onChangeText={setUserData} 
+                error={errors.userData} // Pass error message to CustomInput
+            />
+            {errors.userData && <Text style={{color: 'red'}}>{errors.userData}</Text>}
+
+            <CustomInput 
+                placeholder="Password" 
+                value={password} 
+                onChangeText={setPassword} 
+                secureTextEntry 
+                error={errors.password} // Pass error message to CustomInput
+            />
+            {errors.password && <Text style={{color: 'red'}}>{errors.password}</Text>}
+
             <CustomButton title="Sign In" onPress={onLogin} />
             <TouchableOpacity onPress={() => router.replace('/register')} style={styles.link}>
                 <Text style={styles.linkText}>Create an account? Register</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.replace('/forgot-pass')} style={styles.link}>
+                <Text style={styles.linkText}>Forgot password?</Text>
             </TouchableOpacity>
         </View>
     );

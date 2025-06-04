@@ -6,6 +6,15 @@ import { useRouter } from 'expo-router';
 import { register } from '../services/api';
 import { showAlert } from '../utils/alertMessage';
 
+function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validatePassword(password) {
+    // At least 6 chars, one number, one special char
+    return /^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{6,}$/.test(password);
+}
+
 export default function Register() {
     const router = useRouter();
     const [userId, setUserId] = useState('');
@@ -14,8 +23,24 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('student');
+    const [errors, setErrors] = useState({});
+
+    const validate = () => {
+        const newErrors = {};
+        if (!userId) newErrors.userName = "User name is required";
+        if (!firstName) newErrors.firstName = "First name is required";
+        if (!lastName) newErrors.lastName = "Last name is required";
+        if (!email) newErrors.email = "Email is required";
+        else if (!validateEmail(email)) newErrors.email = "Invalid email address";
+        if (!password) newErrors.password = "Password is required";
+        else if (!validatePassword(password)) newErrors.password = "Password must be at least 6 characters, include a number and a special character";
+        if (!role) newErrors.role = "Role is required";
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const onRegister = async () => {
+        if (!validate()) return;
         try {
             // Adjust your backend to accept these fields if needed
             const data = {
@@ -37,11 +62,37 @@ export default function Register() {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Register</Text>
-            <CustomInput placeholder="User Name" value={userId} onChangeText={setUserId} />
-            <CustomInput placeholder="First Name" value={firstName} onChangeText={setFirstName} />
-            <CustomInput placeholder="Last Name" value={lastName} onChangeText={setLastName} />
-            <CustomInput placeholder="Email" value={email} onChangeText={setEmail} />
-            <CustomInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+            <CustomInput
+                placeholder="User Name"
+                value={userId}
+                onChangeText={setUserId}
+            />
+            {errors.userName && <Text style={{color: 'red'}}>{errors.userName}</Text>}
+            <CustomInput
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+            />
+            {errors.firstName && <Text style={{color: 'red'}}>{errors.firstName}</Text>}
+            <CustomInput
+                placeholder="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+            />
+            {errors.lastName && <Text style={{color: 'red'}}>{errors.lastName}</Text>}
+            <CustomInput
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+            />
+            {errors.email && <Text style={{color: 'red'}}>{errors.email}</Text>}
+            <CustomInput
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+            />
+            {errors.password && <Text style={{color: 'red'}}>{errors.password}</Text>}
             <View style={styles.roleContainer}>
                 <TouchableOpacity
                     style={[
