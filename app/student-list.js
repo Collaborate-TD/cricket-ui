@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, Alert } from 'react-native';
+import {
+    View,
+    Text,
+    FlatList,
+    StyleSheet,
+    ActivityIndicator,
+    TouchableOpacity,
+    Modal,
+    Alert,
+    Dimensions,
+} from 'react-native';
 import { getMatchUsers, getUnmatchUsers, requestCoach, getStudentProfile, handleUserRequest } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'expo-router';
+
+const { width } = Dimensions.get('window');
 
 export default function StudentList() {
     const [matchedStudents, setMatchedStudents] = useState([]);
@@ -13,18 +25,14 @@ export default function StudentList() {
     const [profileModal, setProfileModal] = useState({ visible: false, student: null });
     const router = useRouter();
 
-    // Reusable function to refresh both lists
     const refreshStudentLists = async (cid) => {
         setLoading(true);
         try {
-            const [matchedRes, unmatchedRes] = await Promise.all([
-                getMatchUsers(cid),
-                getUnmatchUsers(cid)
-            ]);
+            const [matchedRes, unmatchedRes] = await Promise.all([getMatchUsers(cid), getUnmatchUsers(cid)]);
             setMatchedStudents(Array.isArray(matchedRes.data) ? matchedRes.data : []);
             setUnmatchedStudents(Array.isArray(unmatchedRes.data) ? unmatchedRes.data : []);
-        } catch (err) {
-            alert('Failed to fetch students');
+        } catch {
+            Alert.alert('Error', 'Failed to fetch students');
         } finally {
             setLoading(false);
         }
@@ -33,10 +41,12 @@ export default function StudentList() {
     useEffect(() => {
         const fetchData = async () => {
             const token = await getToken();
-            const user = jwtDecode(token);
-            const cid = user.id || user.userId || user._id;
-            setCoachId(cid);
-            await refreshStudentLists(cid);
+            if (token) {
+                const user = jwtDecode(token);
+                const cid = user.id || user.userId || user._id;
+                setCoachId(cid);
+                await refreshStudentLists(cid);
+            }
         };
         fetchData();
     }, []);
@@ -46,123 +56,231 @@ export default function StudentList() {
             const res = await getStudentProfile(studentId);
             setProfileModal({ visible: true, student: res.data });
         } catch {
-            alert('Failed to fetch student profile');
+            Alert.alert('Error', 'Failed to fetch student profile');
         }
     };
 
-    // Send request to student
     const handleRequest = async (studentId) => {
         try {
             await requestCoach({ requesterId: coachId, targetId: studentId });
             Alert.alert('Request Sent', 'Your request has been sent to the student.');
             await refreshStudentLists(coachId);
-        } catch (err) {
+        } catch {
             Alert.alert('Error', 'Could not send request.');
         }
     };
 
-    // Accept student request
     const handleAcceptRequest = async (studentId) => {
         try {
-            await handleUserRequest({
-                approverId: coachId,
-                requesterId: studentId,
-                action: 'approved',
-                feedback: ''
-            });
+            await handleUserRequest({ approverId: coachId, requesterId: studentId, action: 'approved', feedback: '' });
             Alert.alert('Request Accepted', 'You have accepted the student request.');
             await refreshStudentLists(coachId);
-        } catch (err) {
+        } catch {
             Alert.alert('Error', 'Could not accept request.');
         }
     };
 
-    // Reject student request
     const handleRejectRequest = async (studentId) => {
         try {
-            await handleUserRequest({
-                approverId: coachId,
-                requesterId: studentId,
-                action: 'rejected',
-                feedback: ''
-            });
+            await handleUserRequest({ approverId: coachId, requesterId: studentId, action: 'rejected', feedback: '' });
             Alert.alert('Request Rejected', 'You have rejected the student request.');
             await refreshStudentLists(coachId);
-        } catch (err) {
+        } catch {
             Alert.alert('Error', 'Could not reject request.');
         }
     };
 
     if (loading) {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#1976d2" />
+            <View style={styles.container}>
+                {/* Back Button */}
+                <TouchableOpacity
+                    style={{ position: 'absolute', top: 40, left: 20, zIndex: 1 }}
+                    onPress={() => {
+                        if (router.canGoBack?.()) {
+                            router.back();
+                        } else {
+                            router.replace('/coach');
+                        }
+                    }}
+                >
+                    <Text style={{ fontSize: 32, color: '#1976d2' }}>←</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.title}>My Students</Text>
+                <FlatList
+                    data={matchedStudents}
+                    keyExtractor={item => item.userId}
+                    renderItem={({ item }) => (
+                        <View style={styles.studentItem}>
+                            <Text style={styles.studentName}>{item.firstName} {item.lastName}</Text>
+                            <TouchableOpacity
+                                style={styles.profileBtn}
+                                onPress={() => handleViewProfile(item.userId)}
+                            >
+                                <Text style={styles.profileBtnText}>View Profile</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    ListEmptyComponent={<Text>No approved students yet.</Text>}
+                />
+
+                <Text style={styles.title}>Add More Students</Text>
+                <FlatList
+                    data={unmatchedStudents}
+                    keyExtractor={item => item.userId}
+                    renderItem={({ item }) => (
+                        <View style={styles.studentItem}>
+                            <Text style={styles.studentName}>{item.firstName} {item.lastName}</Text>
+                            {item.status === 'requested' && item.requestType === 'sent' ? (
+                                <Text style={styles.pending}>Pending</Text>
+                            ) : item.status === 'requested' && item.requestType === 'received' ? (
+                                <View style={{ flexDirection: 'row', gap: 8 }}>
+                                    <TouchableOpacity onPress={() => handleAcceptRequest(item.userId)}>
+                                        <Text style={styles.addBtn}>Accept</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => handleRejectRequest(item.userId)}>
+                                        <Text style={[styles.addBtn, { backgroundColor: 'red' }]}>Reject</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : item.status === 'rejected' ? (
+                                <Text style={{ color: 'red' }}>Rejected</Text>
+                            ) : (
+                                <TouchableOpacity onPress={() => handleRequest(item.userId)}>
+                                    <Text style={styles.addBtn}>Add</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
+                    ListEmptyComponent={<Text>No more students to add.</Text>}
+                />
+
+                {/* Profile Modal */}
+                <Modal
+                    visible={profileModal.visible}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setProfileModal({ visible: false, student: null })}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContent}>
+                            {profileModal.student && (
+                                <>
+                                    <Text style={styles.modalTitle}>Student Profile</Text>
+                                    <Text>Name: {profileModal.student.firstName} {profileModal.student.lastName}</Text>
+                                    <Text>Email: {profileModal.student.email}</Text>
+                                    <Text>User ID: {profileModal.student.userId || profileModal.student._id}</Text>
+                                    <TouchableOpacity onPress={() => router.push(`/all-videos?studentId=${profileModal.student._id}`)}>
+                                        <Text>View Videos</Text>
+                                    </TouchableOpacity>
+                                </>
+                            )}
+                            <TouchableOpacity
+                                style={[styles.profileBtn, { marginTop: 16 }]}
+                                onPress={() => setProfileModal({ visible: false, student: null })}
+                            >
+                                <Text style={styles.profileBtnText}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
             </View>
         );
     }
 
+    // Card-style student entry (like coach-list)
+    const StudentCard = ({ student, children }) => (
+        <View style={styles.studentCard}>
+            <View>
+                <Text style={styles.studentName}>{student.firstName} {student.lastName}</Text>
+                <Text style={styles.studentEmail}>{student.email || ''}</Text>
+                <Text style={styles.studentId}>ID: {student.userId || student._id}</Text>
+            </View>
+            <View style={styles.buttonsRow}>{children}</View>
+        </View>
+    );
+
     return (
-        <View style={styles.container}>
+        <View style={styles.background}>
             {/* Back Button */}
             <TouchableOpacity
-                style={{ position: 'absolute', top: 40, left: 20, zIndex: 1 }}
+                style={styles.backButton}
                 onPress={() => {
-                    if (router.canGoBack?.()) {
-                        router.back();
-                    } else {
-                        router.replace('/coach');
-                    }
+                    if (router.canGoBack?.()) router.back();
+                    else router.replace('/coach');
                 }}
             >
-                <Text style={{ fontSize: 32, color: '#1976d2' }}>←</Text>
+                <Text style={styles.backArrow}>←</Text>
             </TouchableOpacity>
 
-            <Text style={styles.title}>My Students</Text>
             <FlatList
+                ListHeaderComponent={
+                    <>
+                        <Text style={styles.title}>My Students</Text>
+                        {matchedStudents.length === 0 ? (
+                            <Text style={styles.emptyText}>No approved students yet.</Text>
+                        ) : null}
+                    </>
+                }
                 data={matchedStudents}
-                keyExtractor={item => item.userId}
+                keyExtractor={(item) => item.userId || item._id}
                 renderItem={({ item }) => (
-                    <View style={styles.studentItem}>
-                        <Text style={styles.studentName}>{item.firstName} {item.lastName}</Text>
+                    <StudentCard student={item}>
                         <TouchableOpacity
-                            style={styles.profileBtn}
+                            style={styles.actionBtn}
                             onPress={() => handleViewProfile(item.userId)}
                         >
-                            <Text style={styles.profileBtnText}>View Profile</Text>
+                            <Text style={styles.actionBtnText}>View</Text>
                         </TouchableOpacity>
-                    </View>
+                    </StudentCard>
                 )}
-                ListEmptyComponent={<Text>No approved students yet.</Text>}
-            />
-
-            <Text style={styles.title}>Add More Students</Text>
-            <FlatList
-                data={unmatchedStudents}
-                keyExtractor={item => item.userId}
-                renderItem={({ item }) => (
-                    <View style={styles.studentItem}>
-                        <Text style={styles.studentName}>{item.firstName} {item.lastName}</Text>
-                        {item.status === 'requested' && item.requestType === 'sent' ? (
-                            <Text style={styles.pending}>Pending</Text>
-                        ) : item.status === 'requested' && item.requestType === 'received' ? (
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                <TouchableOpacity onPress={() => handleAcceptRequest(item.userId)}>
-                                    <Text style={styles.addBtn}>Accept</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handleRejectRequest(item.userId)}>
-                                    <Text style={[styles.addBtn, { backgroundColor: 'red' }]}>Reject</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : item.status === 'rejected' ? (
-                            <Text style={{ color: 'red' }}>Rejected</Text>
-                        ) : (
-                            <TouchableOpacity onPress={() => handleRequest(item.userId)}>
-                                <Text style={styles.addBtn}>Add</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                )}
-                ListEmptyComponent={<Text>No more students to add.</Text>}
+                ListFooterComponent={
+                    <>
+                        <Text style={[styles.title, { marginTop: 38 }]}>Add More Students</Text>
+                        {unmatchedStudents.length === 0 ? (
+                            <Text style={styles.emptyText}>No more students to add.</Text>
+                        ) : null}
+                        <FlatList
+                            data={unmatchedStudents}
+                            keyExtractor={(item) => item.userId || item._id}
+                            renderItem={({ item }) => (
+                                <StudentCard student={item}>
+                                    {item.status === 'requested' && item.requestType === 'sent' ? (
+                                        <Text style={styles.pendingText}>Pending</Text>
+                                    ) : item.status === 'requested' && item.requestType === 'received' ? (
+                                        <>
+                                            <TouchableOpacity
+                                                style={[styles.acceptBtn]}
+                                                onPress={() => handleAcceptRequest(item.userId)}
+                                            >
+                                                <Text style={styles.btnText}>Accept</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={[styles.rejectBtn]}
+                                                onPress={() => handleRejectRequest(item.userId)}
+                                            >
+                                                <Text style={styles.btnText}>Reject</Text>
+                                            </TouchableOpacity>
+                                        </>
+                                    ) : item.status === 'rejected' ? (
+                                        <Text style={styles.rejectedText}>Rejected</Text>
+                                    ) : (
+                                        <TouchableOpacity
+                                            style={styles.addBtn}
+                                            onPress={() => handleRequest(item.userId)}
+                                        >
+                                            <Text style={styles.btnText}>Add</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </StudentCard>
+                            )}
+                            ListEmptyComponent={null}
+                            scrollEnabled={false}
+                        />
+                    </>
+                }
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
             />
 
             {/* Profile Modal */}
@@ -174,22 +292,26 @@ export default function StudentList() {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        {profileModal.student && (
+                        {profileModal.student ? (
                             <>
                                 <Text style={styles.modalTitle}>Student Profile</Text>
-                                <Text>Name: {profileModal.student.firstName} {profileModal.student.lastName}</Text>
-                                <Text>Email: {profileModal.student.email}</Text>
-                                <Text>User ID: {profileModal.student.userId || profileModal.student._id}</Text>
-                                <TouchableOpacity onPress={() => router.push(`/all-videos?studentId=${profileModal.student._id}`)}>
-                                    <Text>View Videos</Text>
-                                </TouchableOpacity>
+                                <Text style={styles.modalLabel}>Name:</Text>
+                                <Text style={styles.modalValue}>
+                                    {profileModal.student.firstName} {profileModal.student.lastName}
+                                </Text>
+                                <Text style={styles.modalLabel}>Email:</Text>
+                                <Text style={styles.modalValue}>{profileModal.student.email}</Text>
+                                <Text style={styles.modalLabel}>User ID:</Text>
+                                <Text style={styles.modalValue}>{profileModal.student.userId || profileModal.student._id}</Text>
                             </>
+                        ) : (
+                            <Text style={styles.modalValue}>Loading...</Text>
                         )}
                         <TouchableOpacity
-                            style={[styles.profileBtn, { marginTop: 16 }]}
+                            style={styles.closeBtn}
                             onPress={() => setProfileModal({ visible: false, student: null })}
                         >
-                            <Text style={styles.profileBtnText}>Close</Text>
+                            <Text style={styles.closeBtnText}>Close</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -199,34 +321,200 @@ export default function StudentList() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff', padding: 24 },
-    title: { fontSize: 28, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' },
-    studentItem: {
+    background: {
+        flex: 1,
+        backgroundColor: '#f4f8fb',
+        paddingTop: 0,
+    },
+    backButton: {
+        position: 'absolute',
+        top: 48,
+        left: 20,
+        zIndex: 10,
+        padding: 8,
+        backgroundColor: 'rgba(25, 118, 210, 0.08)',
+        borderRadius: 8,
+    },
+    backArrow: {
+        fontSize: 32,
+        color: '#1976d2',
+        fontWeight: 'bold',
+    },
+    scrollContent: {
+        padding: 24,
+        paddingBottom: 48,
+        maxWidth: 500,
+        alignSelf: 'center',
+        width: '100%',
+    },
+    title: {
+        fontSize: 28,
+        marginBottom: 18,
+        letterSpacing: 0.2,
+        color: '#1976d2',
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    studentCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
         justifyContent: 'space-between',
+        borderRadius: 16,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
+        marginBottom: 14,
+        shadowColor: '#1976d2',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.10,
+        shadowRadius: 10,
+        elevation: 4,
+        borderWidth: 1,
+        backgroundColor: '#fff',
+        borderColor: '#e6e6e6',
     },
-    studentName: { fontSize: 18 },
-    profileBtn: { backgroundColor: '#1976d2', padding: 8, borderRadius: 6 },
-    profileBtnText: { color: '#fff' },
-    addBtn: { backgroundColor: '#1976d2', padding: 8, borderRadius: 6, color: '#fff' },
-    pending: { color: '#888', fontStyle: 'italic' },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    studentName: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#222f3e',
+        marginBottom: 2,
+        letterSpacing: 0.1,
+    },
+    studentEmail: {
+        fontSize: 14,
+        color: '#7f8c8d',
+        opacity: 0.85,
+        marginBottom: 2,
+    },
+    studentId: {
+        fontSize: 12,
+        color: '#b0b0b0',
+        marginBottom: 2,
+    },
+    buttonsRow: {
+        flexDirection: 'row',
+        gap: 10,
+        alignItems: 'center',
+    },
+    actionBtn: {
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        marginLeft: 4,
+        backgroundColor: 'transparent',
+        borderColor: '#1976d2',
+    },
+    actionBtnText: {
+        fontSize: 16,
+        color: '#1976d2',
+        fontWeight: '600',
+    },
+    addBtn: {
+        backgroundColor: '#1976d2',
+        paddingHorizontal: 18,
+        paddingVertical: 9,
+        borderRadius: 8,
+        marginLeft: 4,
+    },
+    btnText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        letterSpacing: 0.2,
+    },
+    pendingText: {
+        fontSize: 16,
+        fontStyle: 'italic',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        color: '#888',
+    },
+    acceptBtn: {
+        backgroundColor: '#28a745',
+        paddingHorizontal: 18,
+        paddingVertical: 9,
+        borderRadius: 8,
+        marginRight: 8,
+    },
+    rejectBtn: {
+        backgroundColor: '#d9534f',
+        paddingHorizontal: 18,
+        paddingVertical: 9,
+        borderRadius: 8,
+    },
+    rejectedText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        color: '#d9534f',
+    },
+    emptyText: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginVertical: 20,
+        opacity: 0.8,
+        color: '#7f8c8d',
+    },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f4f8fb',
+    },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: 'rgba(0,0,0,0.25)',
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalContent: {
         backgroundColor: '#fff',
-        padding: 24,
-        borderRadius: 10,
-        width: '80%',
-        elevation: 5,
+        padding: 28,
+        borderRadius: 16,
+        width: width > 400 ? 350 : '85%',
+        elevation: 8,
+        shadowColor: '#1976d2',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.13,
+        shadowRadius: 10,
+        alignItems: 'center',
     },
-    modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#1976d2',
+        marginBottom: 18,
+        textAlign: 'center',
+    },
+    modalLabel: {
+        fontSize: 15,
+        color: '#1976d2',
+        fontWeight: '600',
+        marginTop: 8,
+    },
+    modalValue: {
+        fontSize: 16,
+        color: '#222f3e',
+        marginBottom: 2,
+        textAlign: 'center',
+    },
+    closeBtn: {
+        backgroundColor: '#1976d2',
+        paddingVertical: 10,
+        paddingHorizontal: 30,
+        borderRadius: 8,
+        marginTop: 22,
+        shadowColor: '#1976d2',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.18,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    closeBtnText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        letterSpacing: 0.2,
+    },
 });
