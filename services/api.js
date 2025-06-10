@@ -29,7 +29,7 @@ export const getMyCoaches = (studentId) => API.get(`/my-coaches/${studentId}`);
 // export const deleteUser = (id) => API.delete(`/user/delete`, { data: { id } });
 export const forgotPassword = (data) => API.post('/auth/forgot-password', data);
 export const resetPassword = (data) => API.post('/auth/reset-password', data);
-export const getVideos = (userId) => API.get(`/videos/${userId}`); // Adjust endpoint as per your backend
+export const getVideos = (filter = {}) => API.post('/video/list', { params: filter }); // Updated to accept a filter object
 export const uploadVideo = (formData) =>
   API.post('/videos/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
