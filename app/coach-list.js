@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { getMatchUsers, requestCoach, getUnmatchUsers, handleUserRequest } from '../services/api';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Modal } from 'react-native';
+import { getMatchUsers, requestCoach, getUnmatchUsers, handleUserRequest, getStudentProfile } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ export default function CoachList() {
     const [coaches, setCoaches] = useState([]);
     const [myRequests, setMyRequests] = useState([]);
     const [studentId, setStudentId] = useState('');
+    const [profileModal, setProfileModal] = useState({ visible: false, coach: null });
     const router = useRouter();
 
     // Reusable function to refresh both lists
@@ -77,6 +78,17 @@ export default function CoachList() {
         }
     };
 
+    // Add this function in CoachList component
+    const handleViewProfile = async (coachId) => {
+        try {
+            // You may need to create a getCoachProfile API similar to getStudentProfile
+            const res = await getStudentProfile(coachId); // Or getCoachProfile if available
+            setProfileModal({ visible: true, coach: res.data });
+        } catch {
+            Alert.alert('Error', 'Failed to fetch coach profile.');
+        }
+    };
+
     return (
         <View style={styles.container}>
             {/* Back Button */}
@@ -99,11 +111,14 @@ export default function CoachList() {
                 renderItem={({ item }) => (
                     <View style={styles.coachItem}>
                         <Text style={styles.coachName}>{item.firstName} {item.lastName}</Text>
-                        <TouchableOpacity onPress={() => router.push(`/all-videos?coachId=${item._id}`)}>
+                        {/* <TouchableOpacity onPress={() => router.push(`/all-videos?coachId=${item._id}`)}>
                             <Text style={styles.viewBtn}>View</Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                         <TouchableOpacity onPress={() => router.push(`/chat/${item._id}`)}>
                             <Text style={styles.messageBtn}>Message</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => handleViewProfile(item._id)}>
+                            <Text style={styles.profileBtnText}>View Profile</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -139,6 +154,36 @@ export default function CoachList() {
                 )}
                 ListEmptyComponent={<Text>No more coaches to add.</Text>}
             />
+
+            {/* Profile Modal */}
+            <Modal
+                visible={profileModal.visible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setProfileModal({ visible: false, coach: null })}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        {profileModal.coach && (
+                            <>
+                                <Text style={styles.modalTitle}>Coach Profile</Text>
+                                <Text>Name: {profileModal.coach.firstName} {profileModal.coach.lastName}</Text>
+                                <Text>Email: {profileModal.coach.email}</Text>
+                                <Text>User Name: {profileModal.coach.userName}</Text>
+                                <TouchableOpacity onPress={() => router.push(`/all-videos?coachId=${profileModal.coach._id}`)}>
+                                    <Text>View Feedbacks</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                        <TouchableOpacity
+                            style={[styles.profileBtn, { marginTop: 16 }]}
+                            onPress={() => setProfileModal({ visible: false, coach: null })}
+                        >
+                            <Text style={styles.profileBtnText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -156,4 +201,18 @@ const styles = StyleSheet.create({
     viewBtn: { color: '#1976d2' },
     messageBtn: { color: '#1976d2' },
     addBtn: { backgroundColor: '#1976d2', padding: 8, borderRadius: 6, color: '#fff' },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        padding: 24,
+        borderRadius: 10,
+        width: '80%',
+        elevation: 5,
+    },
+    modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
 });

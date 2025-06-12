@@ -30,6 +30,9 @@ export default function AllVideos() {
                 const token = await getToken();
                 const user = jwtDecode(token);
 
+                params.studentId && (filter.studentId = params.studentId);
+                params.coachId && (filter.coachId = params.coachId);
+
                 filter.userId = user.id || user._id;
                 const res = await getVideos(filter);
                 console.log('Fetched Videos:', res.data);

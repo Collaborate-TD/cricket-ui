@@ -120,13 +120,13 @@ export default function StudentList() {
             <Text style={styles.title}>My Students</Text>
             <FlatList
                 data={matchedStudents}
-                keyExtractor={item => item.userId}
+                keyExtractor={item => item._id}
                 renderItem={({ item }) => (
                     <View style={styles.studentItem}>
                         <Text style={styles.studentName}>{item.firstName} {item.lastName}</Text>
                         <TouchableOpacity
                             style={styles.profileBtn}
-                            onPress={() => handleViewProfile(item.userId)}
+                            onPress={() => handleViewProfile(item._id)}
                         >
                             <Text style={styles.profileBtnText}>View Profile</Text>
                         </TouchableOpacity>
@@ -179,7 +179,7 @@ export default function StudentList() {
                                 <Text style={styles.modalTitle}>Student Profile</Text>
                                 <Text>Name: {profileModal.student.firstName} {profileModal.student.lastName}</Text>
                                 <Text>Email: {profileModal.student.email}</Text>
-                                <Text>User ID: {profileModal.student.userId || profileModal.student._id}</Text>
+                                <Text>User Name: {profileModal.student.userName}</Text>
                                 <TouchableOpacity onPress={() => router.push(`/all-videos?studentId=${profileModal.student._id}`)}>
                                     <Text>View Videos</Text>
                                 </TouchableOpacity>
