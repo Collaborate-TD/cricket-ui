@@ -30,14 +30,7 @@ export default function AllVideos() {
                 const token = await getToken();
                 const user = jwtDecode(token);
 
-                if (params.studentId) {
-                    filter.studentId = params.studentId;
-                } else if (params.coachId) {
-                    filter.coachId = params.coachId;
-                } else {
-                    filter.userId = user.id || user._id;
-                }
-                console.log('Filter:', filter);
+                filter.userId = user.id || user._id;
                 const res = await getVideos(filter);
                 console.log('Fetched Videos:', res.data);
                 setVideos(res.data.list);
