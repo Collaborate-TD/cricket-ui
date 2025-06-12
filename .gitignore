@@ -5,3 +5,4 @@ web-build/
 .DS_Store
 .env
 package-lock.json
+android/
