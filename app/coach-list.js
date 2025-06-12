@@ -99,7 +99,7 @@ export default function CoachList() {
                 renderItem={({ item }) => (
                     <View style={styles.coachItem}>
                         <Text style={styles.coachName}>{item.firstName} {item.lastName}</Text>
-                        <TouchableOpacity onPress={() => router.push(`/pi/${item._id}`)}>
+                        <TouchableOpacity onPress={() => router.push(`/all-videos?coachId=${item._id}`)}>
                             <Text style={styles.viewBtn}>View</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => router.push(`/chat/${item._id}`)}>

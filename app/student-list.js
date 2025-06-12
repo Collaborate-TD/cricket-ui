@@ -180,6 +180,9 @@ export default function StudentList() {
                                 <Text>Name: {profileModal.student.firstName} {profileModal.student.lastName}</Text>
                                 <Text>Email: {profileModal.student.email}</Text>
                                 <Text>User ID: {profileModal.student.userId || profileModal.student._id}</Text>
+                                <TouchableOpacity onPress={() => router.push(`/all-videos?studentId=${profileModal.student._id}`)}>
+                                    <Text>View Videos</Text>
+                                </TouchableOpacity>
                             </>
                         )}
                         <TouchableOpacity
