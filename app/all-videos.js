@@ -35,7 +35,7 @@ export default function AllVideos() {
 
                 filter.userId = user.id || user._id;
                 const res = await getVideos(filter);
-                console.log('Fetched Videos:', res.data);
+                // console.log('Fetched Videos:', res.data);
                 setVideos(res.data.list);
             } catch (err) {
                 console.error('Failed to fetch videos:', err);
