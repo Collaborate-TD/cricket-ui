@@ -10,6 +10,8 @@ import {
 import { useCameraPermissions, useMicrophonePermissions, CameraView } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
+import { getToken } from '../utils/tokenStorage';
+import { jwtDecode } from 'jwt-decode';
 
 export default function RecordVideoScreen() {
   const cameraRef = useRef(null);
@@ -38,8 +40,12 @@ export default function RecordVideoScreen() {
         type: 'video/mp4',
       });
 
-      formData.append('userId', '683f89bbdf224ebd5d1a2e49'); // Replace with actual student ID
-      formData.append('username', 'dev@gmail.com'); // Replace with actual student username
+      // Get user info from JWT token
+      const token = await getToken();
+      const user = jwtDecode(token);
+      formData.append('userId', user.id || user._id);
+      formData.append('username', user.username || user.email);
+
       console.log('Upload URL:', `${process.env.API_URL}/file/upload`);
 
       const response = await fetch(`${process.env.API_URL}/file/upload`, {
