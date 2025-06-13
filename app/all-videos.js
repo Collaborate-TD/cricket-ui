@@ -93,7 +93,13 @@ export default function AllVideos() {
                         : <Text style={{ textAlign: 'center', marginTop: 32 }}>No videos yet.</Text>
                 }
                 ListFooterComponent={
-                    <TouchableOpacity style={styles.newRecording} onPress={() => router.push('/record-video')}>
+                    <TouchableOpacity style={styles.newRecording} onPress={() => {
+                        if (params.studentId) {
+                            router.push(`/record-video?studentId=${params.studentId}`);
+                        } else {
+                            router.push('/record-video');
+                        }
+                    }}>
                         <Text style={styles.newRecordingIcon}>🎥</Text>
                         <Text>New Recording</Text>
                     </TouchableOpacity>

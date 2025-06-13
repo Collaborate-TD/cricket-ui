@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useCameraPermissions, useMicrophonePermissions, CameraView } from 'expo-camera';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
@@ -21,6 +21,7 @@ export default function RecordVideoScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions();
+  const params = useLocalSearchParams();
 
   useEffect(() => {
     if (!permission) requestPermission();
@@ -43,8 +44,12 @@ export default function RecordVideoScreen() {
       // Get user info from JWT token
       const token = await getToken();
       const user = jwtDecode(token);
-      formData.append('userId', user.id || user._id);
+
+      let userId = params.studentId || user._id || user.id;
+      formData.append('userId', userId);
       formData.append('username', user.username || user.email);
+
+      if (params.studentId) formData.append('studentId', params.studentId);
 
       console.log('Upload URL:', `${process.env.API_URL}/file/upload`);
 

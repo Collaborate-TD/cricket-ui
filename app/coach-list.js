@@ -166,12 +166,24 @@ export default function CoachList() {
                     <View style={styles.modalContent}>
                         {profileModal.coach && (
                             <>
-                                <Text style={styles.modalTitle}>Coach Profile</Text>
-                                <Text>Name: {profileModal.coach.firstName} {profileModal.coach.lastName}</Text>
-                                <Text>Email: {profileModal.coach.email}</Text>
-                                <Text>User Name: {profileModal.coach.userName}</Text>
-                                <TouchableOpacity onPress={() => router.push(`/all-videos?coachId=${profileModal.coach._id}`)}>
-                                    <Text>View Feedbacks</Text>
+                                <Text style={styles.profileTitle}>Coach Profile</Text>
+                                <View style={styles.profileRow}>
+                                    <Text style={styles.profileLabel}>Name:</Text>
+                                    <Text style={styles.profileValue}>{profileModal.coach.firstName} {profileModal.coach.lastName}</Text>
+                                </View>
+                                <View style={styles.profileRow}>
+                                    <Text style={styles.profileLabel}>Email:</Text>
+                                    <Text style={styles.profileValue}>{profileModal.coach.email}</Text>
+                                </View>
+                                <View style={styles.profileRow}>
+                                    <Text style={styles.profileLabel}>Username:</Text>
+                                    <Text style={styles.profileValue}>{profileModal.coach.userName}</Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={styles.feedbackBtn}
+                                    onPress={() => router.push(`/all-videos?coachId=${profileModal.coach._id}`)}
+                                >
+                                    <Text style={styles.feedbackBtnText}>View Feedbacks</Text>
                                 </TouchableOpacity>
                             </>
                         )}
@@ -214,5 +226,40 @@ const styles = StyleSheet.create({
         width: '80%',
         elevation: 5,
     },
-    modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+    profileTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 18,
+        color: '#1976d2',
+        alignSelf: 'center',
+    },
+    profileRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    profileLabel: {
+        fontWeight: 'bold',
+        color: '#444',
+        width: 90,
+        fontSize: 16,
+    },
+    profileValue: {
+        color: '#222',
+        fontSize: 16,
+        flexShrink: 1,
+    },
+    feedbackBtn: {
+        marginTop: 18,
+        backgroundColor: '#1976d2',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    feedbackBtnText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        letterSpacing: 0.5,
+    },
 });
