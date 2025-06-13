@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
-import { forgotPassword } from '../services/api'; // You need to implement this API call
+import { forgotPassword } from '../services/api';
 import { useRouter } from 'expo-router';
 
 export default function ForgotPassword() {
@@ -9,6 +9,7 @@ export default function ForgotPassword() {
     const [loading, setLoading] = useState(false);
     const [resetLink, setResetLink] = useState('');
     const [message, setMessage] = useState('');
+    const [inputFocused, setInputFocused] = useState(false);
     const router = useRouter();
 
     function validateEmail(email) {
@@ -48,38 +49,143 @@ export default function ForgotPassword() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Forgot Password</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                value={email}
-                autoCapitalize="none"
-                onChangeText={setEmail}
-                keyboardType="email-address"
-            />
-            {error ? <Text style={{ color: 'red', marginBottom: 10 }}>{error}</Text> : null}
-            {resetLink ? (
-                <View style={{ marginBottom: 5 }}>
-                    <Text style={{ color: 'green' }}>{message}</Text>
-                </View>
-            ) : null}
-            <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send Reset Link</Text>}
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/login')} style={styles.link}>
-                <Text style={styles.linkText}>Back to Login</Text>
-            </TouchableOpacity>
+        <View style={styles.background}>
+            <View style={styles.card}>
+                <Text style={styles.title}>Forgot Password</Text>
+                <Text style={styles.subtitle}>
+                    Enter your email address and we'll send you a reset link.
+                </Text>
+                <TextInput
+                    style={[
+                        styles.input,
+                        inputFocused && { borderColor: '#1976d2', backgroundColor: '#f4f8fb' }
+                    ]}
+                    placeholder="Enter your email"
+                    value={email}
+                    autoCapitalize="none"
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    placeholderTextColor="#b0b0b0"
+                />
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                {resetLink ? (
+                    <View style={{ marginBottom: 5 }}>
+                        <Text style={styles.successText}>{message}</Text>
+                    </View>
+                ) : null}
+                <TouchableOpacity
+                    style={[
+                        styles.button,
+                        loading && { opacity: 0.7 }
+                    ]}
+                    onPress={handleSubmit}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.buttonText}>Send Reset Link</Text>
+                    )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => router.replace('/login')}
+                    style={styles.linkBtn}
+                >
+                    <Text style={styles.linkText}>Back to Login</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
-    title: { fontSize: 28, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' },
-    input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
-    button: { backgroundColor: '#1976d2', padding: 14, borderRadius: 8, alignItems: 'center' },
-    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-    link: { marginTop: 24, alignItems: 'center' },
-    linkText: { color: '#1976d2', fontSize: 16 }
+    background: {
+        flex: 1,
+        backgroundColor: '#f4f8fb',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    card: {
+        width: '100%',
+        maxWidth: 380,
+        backgroundColor: '#fff',
+        borderRadius: 18,
+        padding: 28,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.13,
+        shadowRadius: 10,
+        elevation: 7,
+        alignItems: 'center',
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#1976d2',
+        marginBottom: 10,
+        textAlign: 'center',
+        letterSpacing: 0.5,
+    },
+    subtitle: {
+        fontSize: 15,
+        color: '#555',
+        marginBottom: 22,
+        textAlign: 'center',
+    },
+    input: {
+        width: '100%',
+        borderWidth: 1.5,
+        borderColor: '#e0e0e0',
+        borderRadius: 8,
+        padding: 14,
+        marginBottom: 10,
+        backgroundColor: '#fafbfc',
+        fontSize: 16,
+        color: '#222',
+    },
+    button: {
+        backgroundColor: '#1976d2',
+        paddingVertical: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        width: '100%',
+        marginTop: 8,
+        shadowColor: '#1976d2',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.18,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    buttonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 17,
+        letterSpacing: 0.2,
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 14,
+        marginBottom: 8,
+        alignSelf: 'flex-start',
+    },
+    successText: {
+        color: 'green',
+        fontSize: 15,
+        marginBottom: 8,
+        alignSelf: 'flex-start',
+    },
+    linkBtn: {
+        marginTop: 22,
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 18,
+        borderRadius: 6,
+    },
+    linkText: {
+        color: '#1976d2',
+        fontSize: 16,
+        fontWeight: '500',
+    },
 });
