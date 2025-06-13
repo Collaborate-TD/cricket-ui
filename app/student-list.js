@@ -120,13 +120,13 @@ export default function StudentList() {
             <Text style={styles.title}>My Students</Text>
             <FlatList
                 data={matchedStudents}
-                keyExtractor={item => item.userId}
+                keyExtractor={item => item._id}
                 renderItem={({ item }) => (
                     <View style={styles.studentItem}>
                         <Text style={styles.studentName}>{item.firstName} {item.lastName}</Text>
                         <TouchableOpacity
                             style={styles.profileBtn}
-                            onPress={() => handleViewProfile(item.userId)}
+                            onPress={() => handleViewProfile(item._id)}
                         >
                             <Text style={styles.profileBtnText}>View Profile</Text>
                         </TouchableOpacity>
@@ -176,12 +176,24 @@ export default function StudentList() {
                     <View style={styles.modalContent}>
                         {profileModal.student && (
                             <>
-                                <Text style={styles.modalTitle}>Student Profile</Text>
-                                <Text>Name: {profileModal.student.firstName} {profileModal.student.lastName}</Text>
-                                <Text>Email: {profileModal.student.email}</Text>
-                                <Text>User ID: {profileModal.student.userId || profileModal.student._id}</Text>
-                                <TouchableOpacity onPress={() => router.push(`/all-videos?studentId=${profileModal.student._id}`)}>
-                                    <Text>View Videos</Text>
+                                <Text style={styles.profileTitle}>Student Profile</Text>
+                                <View style={styles.profileRow}>
+                                    <Text style={styles.profileLabel}>Name:</Text>
+                                    <Text style={styles.profileValue}>{profileModal.student.firstName} {profileModal.student.lastName}</Text>
+                                </View>
+                                <View style={styles.profileRow}>
+                                    <Text style={styles.profileLabel}>Email:</Text>
+                                    <Text style={styles.profileValue}>{profileModal.student.email}</Text>
+                                </View>
+                                <View style={styles.profileRow}>
+                                    <Text style={styles.profileLabel}>Username:</Text>
+                                    <Text style={styles.profileValue}>{profileModal.student.userName}</Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={styles.feedbackBtn}
+                                    onPress={() => router.push(`/all-videos?studentId=${profileModal.student._id}`)}
+                                >
+                                    <Text style={styles.feedbackBtnText}>View Videos</Text>
                                 </TouchableOpacity>
                             </>
                         )}
@@ -228,5 +240,40 @@ const styles = StyleSheet.create({
         width: '80%',
         elevation: 5,
     },
-    modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+    profileTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 18,
+        color: '#1976d2',
+        alignSelf: 'center',
+    },
+    profileRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    profileLabel: {
+        fontWeight: 'bold',
+        color: '#444',
+        width: 90,
+        fontSize: 16,
+    },
+    profileValue: {
+        color: '#222',
+        fontSize: 16,
+        flexShrink: 1,
+    },
+    feedbackBtn: {
+        marginTop: 18,
+        backgroundColor: '#1976d2',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    feedbackBtnText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        letterSpacing: 0.5,
+    },
 });

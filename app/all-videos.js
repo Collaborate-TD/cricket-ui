@@ -30,16 +30,12 @@ export default function AllVideos() {
                 const token = await getToken();
                 const user = jwtDecode(token);
 
-                if (params.studentId) {
-                    filter.studentId = params.studentId;
-                } else if (params.coachId) {
-                    filter.coachId = params.coachId;
-                } else {
-                    filter.userId = user.id || user._id;
-                }
-                console.log('Filter:', filter);
+                params.studentId && (filter.studentId = params.studentId);
+                params.coachId && (filter.coachId = params.coachId);
+
+                filter.userId = user.id || user._id;
                 const res = await getVideos(filter);
-                console.log('Fetched Videos:', res.data);
+                // console.log('Fetched Videos:', res.data);
                 setVideos(res.data.list);
             } catch (err) {
                 console.error('Failed to fetch videos:', err);
@@ -97,7 +93,13 @@ export default function AllVideos() {
                         : <Text style={{ textAlign: 'center', marginTop: 32 }}>No videos yet.</Text>
                 }
                 ListFooterComponent={
-                    <TouchableOpacity style={styles.newRecording} onPress={() => router.push('/record-video')}>
+                    <TouchableOpacity style={styles.newRecording} onPress={() => {
+                        if (params.studentId) {
+                            router.push(`/record-video?studentId=${params.studentId}`);
+                        } else {
+                            router.push('/record-video');
+                        }
+                    }}>
                         <Text style={styles.newRecordingIcon}>🎥</Text>
                         <Text>New Recording</Text>
                     </TouchableOpacity>
