@@ -13,6 +13,7 @@ export default function VideoReview() {
     const [video, setVideo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [fullscreenOpened, setFullscreenOpened] = useState(false);
     const videoRef = useRef(null);
 
     useEffect(() => {
@@ -45,12 +46,21 @@ export default function VideoReview() {
 
     // Automatically present fullscreen when video is loaded
     const handleVideoReady = async () => {
-        if (videoRef.current) {
+        if (!fullscreenOpened && videoRef.current) {
+            setFullscreenOpened(true);
             try {
                 await videoRef.current.presentFullscreenPlayer();
             } catch (e) {
                 // Ignore if not supported on web
             }
+        }
+    };
+
+    const handleFullscreenUpdate = (event) => {
+        // 3 means fullscreen exited
+        if (event.fullscreenUpdate === 3) {
+            setFullscreenOpened(false); // Reset the flag if needed
+            router.replace('/all-videos'); // Go back to the video list
         }
     };
 
@@ -70,12 +80,7 @@ export default function VideoReview() {
                 useNativeControls
                 resizeMode="contain"
                 onReadyForDisplay={handleVideoReady}
-                onFullscreenUpdate={event => {
-                    // 3 means fullscreen exited
-                    if (event.fullscreenUpdate === 3) {
-                        setRefreshKey(k => k + 1); // Force re-render to fix layout
-                    }
-                }}
+                onFullscreenUpdate={handleFullscreenUpdate}
             />
             <Text style={styles.videoId}>Video ID: {video._id}</Text>
         </View>
