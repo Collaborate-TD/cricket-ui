@@ -54,10 +54,10 @@ export default function Login() {
                 <Text style={styles.title}>Login</Text>
 
                 <View style={styles.inputWrapper}>
-                    <CustomInput 
-                        placeholder="Username or Email" 
-                        value={userData} 
-                        onChangeText={setUserData} 
+                    <CustomInput
+                        placeholder="Username or Email"
+                        value={userData}
+                        onChangeText={setUserData}
                         error={errors.userData}
                         style={styles.inputBox}
                         inputStyle={styles.inputText}
@@ -67,10 +67,10 @@ export default function Login() {
                 {errors.userData && <Text style={styles.errorText}>{errors.userData}</Text>}
 
                 <View style={styles.inputWrapper}>
-                    <CustomInput 
-                        placeholder="Password" 
-                        value={password} 
-                        onChangeText={setPassword} 
+                    <CustomInput
+                        placeholder="Password"
+                        value={password}
+                        onChangeText={setPassword}
                         secureTextEntry={!showPassword}
                         error={errors.password}
                         style={styles.inputBox}
