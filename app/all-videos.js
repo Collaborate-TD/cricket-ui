@@ -63,6 +63,7 @@ export default function AllVideos() {
                     : {})}
             />
             <Text style={styles.title}>{item.title}</Text>
+            
         </TouchableOpacity>
     );
 
