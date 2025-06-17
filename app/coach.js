@@ -81,14 +81,6 @@ export default function Coach() {
     fetchName();
   }, []);
 
-  if (!fontsLoaded || loading) {
-    return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.emojiColor} />
-      </View>
-    );
-  }
-
   const handleSignOut = async () => {
     await removeToken();
     router.replace('/login');
@@ -101,7 +93,6 @@ export default function Coach() {
         {
           backgroundColor: colors.cardBackground,
           shadowColor: colors.shadow,
-          transform: [{ scale: 1 }],
         },
       ]}
       onPress={onPress}
@@ -115,39 +106,106 @@ export default function Coach() {
     </TouchableOpacity>
   );
 
+  if (!fontsLoaded || loading) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.emojiColor} />
+      </View>
+    );
+  }
+
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      ...styles.container,
+      backgroundColor: colors.background,
+    },
+    header: {
+      ...styles.header,
+    },
+    signOutBtn: {
+      ...styles.signOutBtn,
+    },
+    signOutText: {
+      ...styles.signOutText,
+      color: colors.signOutColor,
+    },
+    name: {
+      ...styles.name,
+      color: '#fff',
+      fontFamily: 'Poppins_700Bold',
+    },
+    role: {
+      ...styles.role,
+      color: '#e0e0e0',
+      fontFamily: 'Poppins_400Regular',
+    },
+  });
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient colors={colors.headerGradient} style={styles.header}>
-        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-          <Text style={[styles.signOutText, { color: colors.signOutColor }]}>Sign-out</Text>
+    <View style={dynamicStyles.container}>
+      <LinearGradient colors={colors.headerGradient} style={dynamicStyles.header}>
+        <TouchableOpacity style={dynamicStyles.signOutBtn} onPress={handleSignOut}>
+          <Text style={dynamicStyles.signOutText}>Sign-out</Text>
         </TouchableOpacity>
 
         <View style={styles.profileContainer}>
           <LinearGradient colors={['#8ab4f8', '#1976d2', '#192f6a']} style={styles.avatarGradient}>
             <Image source={defaultUser} style={styles.avatar} resizeMode="cover" />
           </LinearGradient>
-          <Text style={[styles.name, { color: '#fff', fontFamily: 'Poppins_700Bold' }]}>
+          <Text style={dynamicStyles.name}>
             {firstName || 'Coach'}
           </Text>
-          <Text style={[styles.role, { color: '#e0e0e0', fontFamily: 'Poppins_400Regular' }]}>Coach</Text>
+          <Text style={dynamicStyles.role}>Coach</Text>
         </View>
       </LinearGradient>
 
       <ScrollView contentContainerStyle={styles.menuContainer}>
-        <MenuItem icon="👤" label="Personal Information" onPress={() => router.push('/pi')} />
-        <MenuItem icon="🎓" label="Students" onPress={() => router.push('/student-list')} />
-        <MenuItem icon="🎬" label="All Videos" onPress={() => {}} />
-        <MenuItem icon="📷" label="All Pictures" onPress={() => {}} />
-        <MenuItem icon="❤️" label="Favourites" onPress={() => router.push('/favourites')} />
-        <MenuItem icon="⚙️" label="Settings" onPress={() => router.push('/settings')} />
+        <View style={styles.menu}>
+          <MenuItem
+            icon="👤"
+            label="Personal Information"
+            onPress={() => router.push('/pi')}
+          />
+          <MenuItem
+            icon="🎓"
+            label="Students"
+            onPress={() => router.push('/student-list')}
+          />
+          <MenuItem
+            icon="🎬"
+            label="All Videos"
+            onPress={() => router.push('/all-videos')}
+          />
+          <MenuItem
+            icon="📷"
+            label="All Pictures"
+            onPress={() => router.push('/allpictures')}
+          />
+          <MenuItem
+            icon="❤"
+            label="Favourites"
+            onPress={() => router.push('/favourites')}
+          />
+          <MenuItem
+            icon="⚙"
+            label="Settings"
+            onPress={() => router.push('/settings')}
+          />
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { 
+    flex: 1 
+  },
+  centered: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   header: {
     height: 280,
     borderBottomLeftRadius: 28,
@@ -254,5 +312,8 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 20,
     marginLeft: 8,
+  },
+  menu: {
+    flex: 1,
   },
 });

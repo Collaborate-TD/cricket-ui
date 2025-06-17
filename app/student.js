@@ -26,6 +26,7 @@ import defaultUser from '../assets/imgs/default_user.png';
 export default function Student() {
   const router = useRouter();
   const scheme = useColorScheme();
+
   const [firstName, setFirstName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -78,14 +79,6 @@ export default function Student() {
     router.replace('/login');
   };
 
-  if (!fontsLoaded || loading) {
-    return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.emojiColor} />
-      </View>
-    );
-  }
-
   const MenuItem = ({ icon, label, onPress }) => (
     <TouchableOpacity
       style={[styles.menuItem, { backgroundColor: colors.cardBackground }]}
@@ -99,6 +92,14 @@ export default function Student() {
       <Text style={[styles.chevron, { color: colors.chevronColor }]}>›</Text>
     </TouchableOpacity>
   );
+
+  if (!fontsLoaded || loading) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.emojiColor} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -120,20 +121,52 @@ export default function Student() {
       </LinearGradient>
 
       <ScrollView contentContainerStyle={styles.menuWrapper}>
-        <MenuItem icon="👤" label="Personal Information" onPress={() => router.push('/pi')} />
-        <MenuItem icon="🏏" label="Coaches" onPress={() => router.push('/coach-list')} />
-        <MenuItem icon="🎬" label="All Videos" onPress={() => router.push('/all-videos')} />
-        <MenuItem icon="📷" label="All Pictures" onPress={() => router.push('/all-pictures')} />
-        <MenuItem icon="❤️" label="Favourites" onPress={() => router.push('/favourites')} />
-        <MenuItem icon="⚙️" label="Settings" onPress={() => router.push('/settings')} />
+        <View style={styles.menu}>
+          <MenuItem
+            icon="👤"
+            label="Personal Information"
+            onPress={() => router.push('/pi')}
+          />
+          <MenuItem
+            icon="🏏"
+            label="Coaches"
+            onPress={() => router.push('/coach-list')}
+          />
+          <MenuItem
+            icon="🎬"
+            label="All Videos"
+            onPress={() => router.push('/all-videos')}
+          />
+          <MenuItem
+            icon="📷"
+            label="All Pictures"
+            onPress={() => router.push('/allpictures')}
+          />
+          <MenuItem
+            icon="❤"
+            label="Favourites"
+            onPress={() => router.push('/favourites')}
+          />
+          <MenuItem
+            icon="⚙"
+            label="Settings"
+            onPress={() => router.push('/settings')}
+          />
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { 
+    flex: 1 
+  },
+  centered: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   header: {
     height: 280,
     borderBottomLeftRadius: 28,
@@ -227,5 +260,8 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 20,
     marginLeft: 8,
+  },
+  menu: {
+    flex: 1,
   },
 });
