@@ -103,13 +103,13 @@ export default function Register() {
           {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
         </View>
 
-        <View style={[styles.inputWrapper, { position: 'relative' }]}>
+        <View style={styles.passwordWrapper}>
           <CustomInput
             placeholder="Password"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
-            inputStyle={{ paddingRight: 40 }} // prevent text overlap with eye icon
+            inputStyle={styles.passwordInput}
           />
           <TouchableOpacity
             style={styles.showHideBtn}
@@ -127,21 +127,21 @@ export default function Register() {
 
         <View style={styles.roleContainer}>
           <TouchableOpacity
-            style={[styles.roleButton, role === 'student' && styles.roleButtonSelected]}
+            style={role === 'student' ? styles.roleButtonSelected : styles.roleButton}
             onPress={() => setRole('student')}
           >
             <Text
-              style={[styles.roleButtonText, role === 'student' && styles.roleButtonTextSelected]}
+              style={role === 'student' ? styles.roleButtonTextSelected : styles.roleButtonText}
             >
               Student
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.roleButton, role === 'coach' && styles.roleButtonSelected]}
+            style={role === 'coach' ? styles.roleButtonSelected : styles.roleButton}
             onPress={() => setRole('coach')}
           >
             <Text
-              style={[styles.roleButtonText, role === 'coach' && styles.roleButtonTextSelected]}
+              style={role === 'coach' ? styles.roleButtonTextSelected : styles.roleButtonText}
             >
               Coach
             </Text>
@@ -195,6 +195,14 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 12,
   },
+  passwordWrapper: {
+    width: '100%',
+    marginBottom: 12,
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 40,
+  },
   errorText: {
     color: 'red',
     fontSize: 13,
@@ -205,7 +213,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 12,
     top: '50%',
-    transform: [{ translateY: -11 }], // half icon size (22/2) to center vertically
+    transform: [{ translateY: -11 }],
     zIndex: 1,
     padding: 4,
   },
@@ -246,6 +254,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   roleButtonSelected: {
+    borderWidth: 1,
+    borderColor: '#1976d2',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginHorizontal: 5,
+    marginTop: 10,
     backgroundColor: '#1976d2',
   },
   roleButtonText: {
@@ -255,5 +270,7 @@ const styles = StyleSheet.create({
   },
   roleButtonTextSelected: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

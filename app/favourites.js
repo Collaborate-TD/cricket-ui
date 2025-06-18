@@ -9,6 +9,7 @@ import {
   TextInput,
   Switch,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Video } from 'expo-av';
 import { useRouter } from 'expo-router';
@@ -57,7 +58,7 @@ export default function FavouritesPage() {
   };
 
   const renderItem = ({ item }) => (
-    <View style={[styles.card, viewType === 'list' && styles.listCard]}>
+    <View style={viewType === 'list' ? styles.listCard : styles.card}>
       {item.type === 'video' ? (
         <Video
           source={{ uri: item.url }}
@@ -115,7 +116,7 @@ export default function FavouritesPage() {
 
       {filtered.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>You haven’t saved any favourites yet!</Text>
+          <Text style={styles.emptyText}>You haven't saved any favourites yet!</Text>
           <TouchableOpacity onPress={() => router.push('/all-videos')}>
             <Text style={styles.browseBtn}>Browse Videos</Text>
           </TouchableOpacity>
@@ -125,7 +126,7 @@ export default function FavouritesPage() {
           data={filtered}
           renderItem={renderItem}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={{ paddingBottom: 32 }}
+          contentContainerStyle={styles.flatListContent}
         />
       )}
     </View>
@@ -133,11 +134,27 @@ export default function FavouritesPage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f4f8fb' },
-  backBtn: { marginBottom: 12 },
-  backText: { fontSize: 16, color: '#1976d2', fontWeight: 'bold' },
-  header: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
-  controls: { marginBottom: 16 },
+  container: { 
+    flex: 1, 
+    padding: 16, 
+    backgroundColor: '#f4f8fb' 
+  },
+  backBtn: { 
+    marginBottom: 12 
+  },
+  backText: { 
+    fontSize: 16, 
+    color: '#1976d2', 
+    fontWeight: 'bold' 
+  },
+  header: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginBottom: 16 
+  },
+  controls: { 
+    marginBottom: 16 
+  },
   search: {
     padding: 12,
     borderRadius: 8,
@@ -146,8 +163,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginBottom: 12,
   },
-  toggleRow: { flexDirection: 'row', alignItems: 'center' },
-  toggleLabel: { marginRight: 8, fontSize: 16 },
+  toggleRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  toggleLabel: { 
+    marginRight: 8, 
+    fontSize: 16 
+  },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -155,19 +178,57 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     elevation: 2,
   },
-  listCard: { flexDirection: 'row' },
+  listCard: { 
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+    elevation: 2,
+    flexDirection: 'row' 
+  },
   thumbnail: {
     width: '100%',
     aspectRatio: 16 / 9,
     backgroundColor: '#ddd',
   },
-  infoContainer: { padding: 12 },
-  title: { fontSize: 16, fontWeight: '600' },
-  meta: { fontSize: 12, color: '#777' },
-  notes: { fontSize: 13, marginVertical: 4 },
-  unfav: { color: '#d32f2f', marginTop: 8 },
-  emptyContainer: { alignItems: 'center', marginTop: 40 },
-  emptyText: { fontSize: 16, color: '#555', marginBottom: 16 },
-  browseBtn: { fontSize: 16, color: '#1976d2' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  infoContainer: { 
+    padding: 12 
+  },
+  title: { 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  meta: { 
+    fontSize: 12, 
+    color: '#777' 
+  },
+  notes: { 
+    fontSize: 13, 
+    marginVertical: 4 
+  },
+  unfav: { 
+    color: '#d32f2f', 
+    marginTop: 8 
+  },
+  emptyContainer: { 
+    alignItems: 'center', 
+    marginTop: 40 
+  },
+  emptyText: { 
+    fontSize: 16, 
+    color: '#555', 
+    marginBottom: 16 
+  },
+  browseBtn: { 
+    fontSize: 16, 
+    color: '#1976d2' 
+  },
+  loadingContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  flatListContent: { 
+    paddingBottom: 32 
+  },
 });

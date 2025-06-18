@@ -70,7 +70,7 @@ export default function StudentRequests() {
 
   const RequestCard = ({ item }) => (
     <View style={styles.requestCard}>
-      <View style={{ flex: 1 }}>
+      <View style={styles.cardContent}>
         <Text style={styles.studentName}>{item.studentName}</Text>
         <Text style={styles.studentInfo}>Email: {item.studentEmail}</Text>
         <Text style={styles.studentInfo}>User ID: {item.studentId}</Text>
@@ -133,13 +133,13 @@ export default function StudentRequests() {
             />
             <View style={styles.modalBtnRow}>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.submitBtn]}
+                style={styles.submitBtnCombined}
                 onPress={handleDecline}
               >
                 <Text style={styles.submitBtnText}>Submit</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.cancelBtn]}
+                style={styles.cancelBtnCombined}
                 onPress={() => setDeclineModal({ visible: false, requestId: null })}
               >
                 <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -201,6 +201,9 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: '#e6e6e6',
+  },
+  cardContent: {
+    flex: 1,
   },
   studentName: {
     fontSize: 20,
@@ -317,13 +320,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     width: '100%',
   },
-  modalBtn: {
+  submitBtnCombined: {
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 24,
     marginLeft: 8,
-  },
-  submitBtn: {
     backgroundColor: '#1976d2',
   },
   submitBtnText: {
@@ -332,7 +333,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 0.2,
   },
-  cancelBtn: {
+  cancelBtnCombined: {
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    marginLeft: 8,
     backgroundColor: '#fff0f0',
     borderWidth: 1,
     borderColor: '#d32f2f',

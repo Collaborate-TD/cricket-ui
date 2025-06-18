@@ -36,32 +36,6 @@ export default function Student() {
     Poppins_700Bold,
   });
 
-  const colors = scheme === 'dark'
-    ? {
-        background: '#181c24',
-        headerGradient: ['#23243a', '#1a1c3e'],
-        textPrimary: '#f5f6fa',
-        textSecondary: '#aaaaaa',
-        cardBackground: '#23243a',
-        avatarBackground: '#2c2c2c',
-        emojiColor: '#8ab4f8',
-        chevronColor: '#888',
-        signOutColor: '#fff',
-        divider: '#2e3350',
-      }
-    : {
-        background: '#f4f8fb',
-        headerGradient: ['#6dd5ed', '#2193b0', '#4c669f'],
-        textPrimary: '#222f3e',
-        textSecondary: '#7f8c8d',
-        cardBackground: '#fff',
-        avatarBackground: '#e3eafc',
-        emojiColor: '#1976d2',
-        chevronColor: '#b0b0b0',
-        signOutColor: '#fff',
-        divider: '#e6e6e6',
-      };
-
   useEffect(() => {
     const fetchName = async () => {
       const token = await getToken();
@@ -81,29 +55,32 @@ export default function Student() {
 
   const MenuItem = ({ icon, label, onPress }) => (
     <TouchableOpacity
-      style={styles.menuItem}
+      style={scheme === 'dark' ? styles.menuItemDark : styles.menuItem}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <View style={styles.iconCircle}>
-        <Text style={styles.icon}>{icon}</Text>
+      <View style={scheme === 'dark' ? styles.iconCircleDark : styles.iconCircle}>
+        <Text style={scheme === 'dark' ? styles.iconDark : styles.icon}>{icon}</Text>
       </View>
-      <Text style={styles.menuLabel}>{label}</Text>
-      <Text style={styles.chevron}>›</Text>
+      <Text style={scheme === 'dark' ? styles.menuLabelDark : styles.menuLabel}>{label}</Text>
+      <Text style={scheme === 'dark' ? styles.chevronDark : styles.chevron}>›</Text>
     </TouchableOpacity>
   );
 
   if (!fontsLoaded || loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.emojiColor} />
+      <View style={scheme === 'dark' ? styles.centeredDark : styles.centered}>
+        <ActivityIndicator size="large" color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={colors.headerGradient} style={styles.header}>
+    <View style={scheme === 'dark' ? styles.containerDark : styles.container}>
+      <LinearGradient 
+        colors={scheme === 'dark' ? ['#23243a', '#1a1c3e'] : ['#6dd5ed', '#2193b0', '#4c669f']} 
+        style={styles.header}
+      >
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
           <Text style={styles.signOutText}>Sign-out</Text>
         </TouchableOpacity>
@@ -159,6 +136,7 @@ export default function Student() {
 }
 
 const styles = StyleSheet.create({
+  // Light theme styles
   container: { 
     flex: 1,
     backgroundColor: '#f4f8fb',
@@ -169,6 +147,96 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f4f8fb',
   },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    marginVertical: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    backgroundColor: '#fff',
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    backgroundColor: '#e3eafc',
+  },
+  icon: {
+    fontSize: 28,
+    textAlign: 'center',
+    color: '#1976d2',
+  },
+  menuLabel: {
+    fontSize: 18,
+    flex: 1,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#222f3e',
+  },
+  chevron: {
+    fontSize: 20,
+    marginLeft: 8,
+    color: '#b0b0b0',
+  },
+  
+  // Dark theme styles
+  containerDark: { 
+    flex: 1,
+    backgroundColor: '#181c24',
+  },
+  centeredDark: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: '#181c24',
+  },
+  menuItemDark: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    marginVertical: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    backgroundColor: '#23243a',
+  },
+  iconCircleDark: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    backgroundColor: '#2c2c2c',
+  },
+  iconDark: {
+    fontSize: 28,
+    textAlign: 'center',
+    color: '#8ab4f8',
+  },
+  menuLabelDark: {
+    fontSize: 18,
+    flex: 1,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#f5f6fa',
+  },
+  chevronDark: {
+    fontSize: 20,
+    marginLeft: 8,
+    color: '#888',
+  },
+  
+  // Common styles
   header: {
     height: 280,
     borderBottomLeftRadius: 28,
@@ -232,44 +300,6 @@ const styles = StyleSheet.create({
     maxWidth: 500,
     alignSelf: 'center',
     width: '100%',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    marginVertical: 6,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-    backgroundColor: '#fff',
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    backgroundColor: '#e3eafc',
-  },
-  icon: {
-    fontSize: 28,
-    textAlign: 'center',
-    color: '#1976d2',
-  },
-  menuLabel: {
-    fontSize: 18,
-    flex: 1,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#222f3e',
-  },
-  chevron: {
-    fontSize: 20,
-    marginLeft: 8,
-    color: '#b0b0b0',
   },
   menu: {
     flex: 1,

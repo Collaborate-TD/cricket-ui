@@ -74,7 +74,7 @@ export default function Login() {
                         secureTextEntry={!showPassword}
                         error={errors.password}
                         style={styles.inputBox}
-                        inputStyle={[styles.inputText, { paddingRight: 40 }]} // padding to avoid overlap
+                        inputStyle={styles.inputTextWithIcon}
                         placeholderTextColor="#b0b0b0"
                     />
                     <TouchableOpacity
@@ -158,6 +158,12 @@ const styles = StyleSheet.create({
         fontSize: 17,
         color: '#222',
         paddingVertical: 10,
+    },
+    inputTextWithIcon: {
+        fontSize: 17,
+        color: '#222',
+        paddingVertical: 10,
+        paddingRight: 40,
     },
     errorText: {
         color: 'red',

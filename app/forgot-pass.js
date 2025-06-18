@@ -56,10 +56,7 @@ export default function ForgotPassword() {
                     Enter your email address and we'll send you a reset link.
                 </Text>
                 <TextInput
-                    style={[
-                        styles.input,
-                        inputFocused && { borderColor: '#1976d2', backgroundColor: '#f4f8fb' }
-                    ]}
+                    style={inputFocused ? styles.inputFocused : styles.input}
                     placeholder="Enter your email"
                     value={email}
                     autoCapitalize="none"
@@ -71,15 +68,12 @@ export default function ForgotPassword() {
                 />
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
                 {resetLink ? (
-                    <View style={{ marginBottom: 5 }}>
+                    <View style={styles.resetLinkContainer}>
                         <Text style={styles.successText}>{message}</Text>
                     </View>
                 ) : null}
                 <TouchableOpacity
-                    style={[
-                        styles.button,
-                        loading && { opacity: 0.7 }
-                    ]}
+                    style={loading ? styles.buttonLoading : styles.button}
                     onPress={handleSubmit}
                     disabled={loading}
                 >
@@ -145,6 +139,17 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#222',
     },
+    inputFocused: {
+        width: '100%',
+        borderWidth: 1.5,
+        borderColor: '#1976d2',
+        borderRadius: 8,
+        padding: 14,
+        marginBottom: 10,
+        backgroundColor: '#f4f8fb',
+        fontSize: 16,
+        color: '#222',
+    },
     button: {
         backgroundColor: '#1976d2',
         paddingVertical: 15,
@@ -157,6 +162,20 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.18,
         shadowRadius: 4,
         elevation: 2,
+    },
+    buttonLoading: {
+        backgroundColor: '#1976d2',
+        paddingVertical: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        width: '100%',
+        marginTop: 8,
+        shadowColor: '#1976d2',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.18,
+        shadowRadius: 4,
+        elevation: 2,
+        opacity: 0.7,
     },
     buttonText: {
         color: '#fff',
@@ -175,6 +194,9 @@ const styles = StyleSheet.create({
         fontSize: 15,
         marginBottom: 8,
         alignSelf: 'flex-start',
+    },
+    resetLinkContainer: {
+        marginBottom: 5,
     },
     linkBtn: {
         marginTop: 22,

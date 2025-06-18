@@ -58,10 +58,7 @@ export default function ResetPassword() {
           Enter your new password below.
         </Text>
         <TextInput
-          style={[
-            styles.input,
-            inputFocused.password && styles.inputFocused
-          ]}
+          style={inputFocused.password ? styles.inputFocused : styles.input}
           placeholder="New Password"
           value={password}
           onChangeText={setPassword}
@@ -71,10 +68,7 @@ export default function ResetPassword() {
           placeholderTextColor="#b0b0b0"
         />
         <TextInput
-          style={[
-            styles.input,
-            inputFocused.confirm && styles.inputFocused
-          ]}
+          style={inputFocused.confirm ? styles.inputFocused : styles.input}
           placeholder="Confirm Password"
           value={confirm}
           onChangeText={setConfirm}
@@ -84,7 +78,7 @@ export default function ResetPassword() {
           placeholderTextColor="#b0b0b0"
         />
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleReset} disabled={loading}>
+        <TouchableOpacity style={loading ? styles.buttonDisabled : styles.button} onPress={handleReset} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Reset Password</Text>}
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.replace('/login')} style={styles.linkBtn}>
@@ -141,8 +135,15 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   inputFocused: {
+    width: '100%',
+    borderWidth: 1.5,
     borderColor: '#1976d2',
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 10,
     backgroundColor: '#f4f8fb',
+    fontSize: 16,
+    color: '#222',
   },
   button: {
     backgroundColor: '#1976d2',
@@ -158,6 +159,17 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   buttonDisabled: {
+    backgroundColor: '#1976d2',
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 8,
+    shadowColor: '#1976d2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 2,
     opacity: 0.7,
   },
   buttonText: {
