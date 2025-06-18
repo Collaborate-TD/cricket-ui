@@ -52,11 +52,11 @@ export default function Settings() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.option, styles.logout]}
+          style={styles.logoutOption}
           onPress={() => Alert.alert('Logout', 'Logged out successfully.')}
         >
           <Ionicons name="log-out-outline" size={22} color="red" />
-          <Text style={[styles.optionText, { color: 'red' }]}>Logout</Text>
+          <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -109,8 +109,16 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     color: '#333',
   },
-  logout: {
+  logoutOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
     borderBottomWidth: 0,
     marginTop: 12,
+  },
+  logoutText: {
+    fontSize: 16,
+    marginLeft: 16,
+    color: 'red',
   },
 });

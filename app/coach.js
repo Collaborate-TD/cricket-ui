@@ -88,74 +88,41 @@ export default function Coach() {
 
   const MenuItem = ({ icon, label, onPress }) => (
     <TouchableOpacity
-      style={[
-        styles.menuItem,
-        {
-          backgroundColor: colors.cardBackground,
-          shadowColor: colors.shadow,
-        },
-      ]}
+      style={styles.menuItem}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <View style={[styles.menuIconCircle, { backgroundColor: colors.avatarBackground }]}>
-        <Text style={[styles.menuIcon, { color: colors.emojiColor }]}>{icon}</Text>
+      <View style={styles.menuIconCircle}>
+        <Text style={styles.menuIcon}>{icon}</Text>
       </View>
-      <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>{label}</Text>
-      <Text style={[styles.chevron, { color: colors.chevronColor }]}>›</Text>
+      <Text style={styles.menuLabel}>{label}</Text>
+      <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );
 
   if (!fontsLoaded || loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+      <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.emojiColor} />
       </View>
     );
   }
 
-  const dynamicStyles = StyleSheet.create({
-    container: {
-      ...styles.container,
-      backgroundColor: colors.background,
-    },
-    header: {
-      ...styles.header,
-    },
-    signOutBtn: {
-      ...styles.signOutBtn,
-    },
-    signOutText: {
-      ...styles.signOutText,
-      color: colors.signOutColor,
-    },
-    name: {
-      ...styles.name,
-      color: '#fff',
-      fontFamily: 'Poppins_700Bold',
-    },
-    role: {
-      ...styles.role,
-      color: '#e0e0e0',
-      fontFamily: 'Poppins_400Regular',
-    },
-  });
-
   return (
-    <View style={dynamicStyles.container}>
-      <LinearGradient colors={colors.headerGradient} style={dynamicStyles.header}>
-        <TouchableOpacity style={dynamicStyles.signOutBtn} onPress={handleSignOut}>
-          <Text style={dynamicStyles.signOutText}>Sign-out</Text>
+    <View style={styles.container}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+          <Text style={styles.signOutText}>Sign-out</Text>
         </TouchableOpacity>
 
         <View style={styles.profileContainer}>
-          <LinearGradient colors={['#8ab4f8', '#1976d2', '#192f6a']} style={styles.avatarGradient}>
+          <LinearGradient colors={styles.avatarGradientColors} style={styles.avatarGradient}>
             <Image source={defaultUser} style={styles.avatar} resizeMode="cover" />
           </LinearGradient>
-          <Text style={dynamicStyles.name}>
+          <Text style={styles.name}>
             {firstName || 'Coach'}
           </Text>
-          <Text style={dynamicStyles.role}>Coach</Text>
+          <Text style={styles.role}>Coach</Text>
         </View>
       </LinearGradient>
 
@@ -199,12 +166,14 @@ export default function Coach() {
 
 const styles = StyleSheet.create({
   container: { 
-    flex: 1 
+    flex: 1,
+    backgroundColor: '#f4f8fb',
   },
   centered: { 
     flex: 1, 
     justifyContent: 'center', 
-    alignItems: 'center' 
+    alignItems: 'center',
+    backgroundColor: '#f4f8fb',
   },
   header: {
     height: 280,
@@ -231,6 +200,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins_400Regular',
     letterSpacing: 0.2,
+    color: '#fff',
   },
   profileContainer: {
     alignItems: 'center',
@@ -249,6 +219,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
+  avatarGradientColors: ['#8ab4f8', '#1976d2', '#192f6a'],
   avatar: {
     width: 100,
     height: 100,
@@ -265,12 +236,16 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.18)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,
+    fontFamily: 'Poppins_700Bold',
+    color: '#fff',
   },
   role: {
     fontSize: 17,
     marginBottom: 6,
     opacity: 0.85,
     letterSpacing: 0.2,
+    fontFamily: 'Poppins_400Regular',
+    color: '#e0e0e0',
   },
   menuContainer: {
     paddingHorizontal: 18,
@@ -291,6 +266,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.13,
     shadowRadius: 6,
     elevation: 3,
+    backgroundColor: '#fff',
+    shadowColor: 'rgba(25, 118, 210, 0.08)',
   },
   menuIconCircle: {
     width: 44,
@@ -299,19 +276,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    backgroundColor: '#e3eafc',
   },
   menuIcon: {
     fontSize: 28,
     textAlign: 'center',
+    color: '#1976d2',
   },
   menuLabel: {
     fontSize: 18,
     flex: 1,
     fontFamily: 'Poppins_600SemiBold',
+    color: '#222f3e',
   },
   chevron: {
     fontSize: 20,
     marginLeft: 8,
+    color: '#b0b0b0',
   },
   menu: {
     flex: 1,

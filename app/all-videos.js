@@ -34,22 +34,6 @@ export default function AllVideos() {
     Poppins_700Bold,
   });
 
-  const colors = scheme === 'dark'
-    ? {
-        background: '#181c24',
-        textPrimary: '#f5f6fa',
-        cardBackground: '#23243a',
-        accent: '#8ab4f8',
-        border: '#333',
-      }
-    : {
-        background: '#f4f8fb',
-        textPrimary: '#222f3e',
-        cardBackground: '#fff',
-        accent: '#1976d2',
-        border: '#e0e0e0',
-      };
-
   useEffect(() => {
     const getRole = async () => {
       const token = await getToken();
@@ -85,7 +69,7 @@ export default function AllVideos() {
   const renderItem = (item) => (
     <TouchableOpacity
       key={item._id}
-      style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
+      style={scheme === 'dark' ? styles.cardDark : styles.card}
       onPress={() => router.push(`/video-review/${item._id}`)}
       activeOpacity={0.9}
     >
@@ -98,28 +82,28 @@ export default function AllVideos() {
         usePoster={!!item.thumbnailUrl}
         posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
       />
-      <Text style={[styles.title, { color: colors.textPrimary }]}>{item.title}</Text>
+      <Text style={scheme === 'dark' ? styles.titleDark : styles.title}>{item.title}</Text>
     </TouchableOpacity>
   );
 
   if (!fontsLoaded || loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+      <View style={scheme === 'dark' ? styles.centeredDark : styles.centered}>
+        <ActivityIndicator size="large" color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={scheme === 'dark' ? styles.containerDark : styles.container}>
       <TouchableOpacity
         onPress={() => router.replace(role === 'coach' ? '/coach' : '/student')}
         style={styles.backBtn}
       >
-        <Text style={[styles.backText, { color: colors.accent }]}>← Back to Profile</Text>
+        <Text style={scheme === 'dark' ? styles.backTextDark : styles.backText}>← Back to Profile</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.header, { color: colors.textPrimary }]}>Your Videos</Text>
+      <Text style={scheme === 'dark' ? styles.headerDark : styles.header}>Your Videos</Text>
 
       <TouchableOpacity
         onPress={() =>
@@ -145,7 +129,7 @@ export default function AllVideos() {
 
       <View style={styles.grid}>
         {videos.length === 0 ? (
-          <Text style={[styles.emptyText, { color: colors.textPrimary }]}>No videos yet.</Text>
+          <Text style={scheme === 'dark' ? styles.emptyTextDark : styles.emptyText}>No videos yet.</Text>
         ) : (
           videos.map(renderItem)
         )}
@@ -159,11 +143,25 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 28,
+    backgroundColor: '#f4f8fb',
+  },
+  containerDark: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 28,
+    backgroundColor: '#181c24',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f4f8fb',
+  },
+  centeredDark: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#181c24',
   },
   backBtn: {
     marginBottom: 16,
@@ -171,11 +169,24 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
+    color: '#1976d2',
+  },
+  backTextDark: {
+    fontSize: 16,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#8ab4f8',
   },
   header: {
     fontSize: 24,
     fontFamily: 'Poppins_700Bold',
     marginBottom: 12,
+    color: '#222f3e',
+  },
+  headerDark: {
+    fontSize: 24,
+    fontFamily: 'Poppins_700Bold',
+    marginBottom: 12,
+    color: '#f5f6fa',
   },
   newRecordingContainer: {
     marginBottom: 20,
@@ -206,6 +217,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     overflow: 'hidden',
+    backgroundColor: '#fff',
+    borderColor: '#e0e0e0',
+  },
+  cardDark: {
+    width: '48%',
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+    backgroundColor: '#23243a',
+    borderColor: '#333',
   },
   thumbnail: {
     width: '100%',
@@ -217,6 +239,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Poppins_600SemiBold',
     textAlign: 'center',
+    color: '#222f3e',
+  },
+  titleDark: {
+    padding: 10,
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
+    textAlign: 'center',
+    color: '#f5f6fa',
   },
   emptyText: {
     fontSize: 16,
@@ -224,5 +254,14 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     fontFamily: 'Poppins_400Regular',
     width: '100%',
+    color: '#222f3e',
+  },
+  emptyTextDark: {
+    fontSize: 16,
+    textAlign: 'center',
+    paddingTop: 40,
+    fontFamily: 'Poppins_400Regular',
+    width: '100%',
+    color: '#f5f6fa',
   },
 });

@@ -81,31 +81,31 @@ export default function Student() {
 
   const MenuItem = ({ icon, label, onPress }) => (
     <TouchableOpacity
-      style={[styles.menuItem, { backgroundColor: colors.cardBackground }]}
+      style={styles.menuItem}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <View style={[styles.iconCircle, { backgroundColor: colors.avatarBackground }]}>
-        <Text style={[styles.icon, { color: colors.emojiColor }]}>{icon}</Text>
+      <View style={styles.iconCircle}>
+        <Text style={styles.icon}>{icon}</Text>
       </View>
-      <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>{label}</Text>
-      <Text style={[styles.chevron, { color: colors.chevronColor }]}>›</Text>
+      <Text style={styles.menuLabel}>{label}</Text>
+      <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );
 
   if (!fontsLoaded || loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+      <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.emojiColor} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
       <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-          <Text style={[styles.signOutText, { color: colors.signOutColor }]}>Sign-out</Text>
+          <Text style={styles.signOutText}>Sign-out</Text>
         </TouchableOpacity>
 
         <View style={styles.profileContainer}>
@@ -115,8 +115,8 @@ export default function Student() {
           >
             <Image source={defaultUser} style={styles.avatar} resizeMode="cover" />
           </LinearGradient>
-          <Text style={[styles.name, { color: '#fff' }]}>{firstName}</Text>
-          <Text style={[styles.role, { color: '#e0e0e0' }]}>Student</Text>
+          <Text style={styles.name}>{firstName}</Text>
+          <Text style={styles.role}>Student</Text>
         </View>
       </LinearGradient>
 
@@ -160,12 +160,14 @@ export default function Student() {
 
 const styles = StyleSheet.create({
   container: { 
-    flex: 1 
+    flex: 1,
+    backgroundColor: '#f4f8fb',
   },
   centered: { 
     flex: 1, 
     justifyContent: 'center', 
-    alignItems: 'center' 
+    alignItems: 'center',
+    backgroundColor: '#f4f8fb',
   },
   header: {
     height: 280,
@@ -188,6 +190,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins_400Regular',
     letterSpacing: 0.2,
+    color: '#fff',
   },
   profileContainer: {
     alignItems: 'center',
@@ -214,11 +217,13 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.18)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,
+    color: '#fff',
   },
   role: {
     fontSize: 17,
     marginBottom: 6,
     fontFamily: 'Poppins_400Regular',
+    color: '#e0e0e0',
   },
   menuWrapper: {
     paddingHorizontal: 18,
@@ -239,6 +244,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 2,
+    backgroundColor: '#fff',
   },
   iconCircle: {
     width: 44,
@@ -247,19 +253,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    backgroundColor: '#e3eafc',
   },
   icon: {
     fontSize: 28,
     textAlign: 'center',
+    color: '#1976d2',
   },
   menuLabel: {
     fontSize: 18,
     flex: 1,
     fontFamily: 'Poppins_600SemiBold',
+    color: '#222f3e',
   },
   chevron: {
     fontSize: 20,
     marginLeft: 8,
+    color: '#b0b0b0',
   },
   menu: {
     flex: 1,
