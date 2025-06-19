@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import CustomHeader from '../components/CustomHeader';
 import {
     View,
     Text,
@@ -133,23 +134,11 @@ export default function PersonalInfo() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <ScrollView contentContainerStyle={scheme === 'dark' ? styles.wrapperDark : styles.wrapper} keyboardShouldPersistTaps="handled">
-                {/* Gradient Header */}
-                <LinearGradient
-                    colors={scheme === 'dark' ? ['#23243a', '#1a1c3e'] : ['#6dd5ed', '#2193b0', '#4c669f']}
-                    style={styles.header}
-                >
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() =>
-                            router.canGoBack() ? router.back() : router.replace('/student')
-                        }
-                    >
-                        <Ionicons name="arrow-back" size={28} color="#fff" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>
-                        Personal Information
-                    </Text>
-                </LinearGradient>
+                {/* Custom Header */}
+<CustomHeader 
+    title="Personal Information"
+    defaultRoute="/student"
+/>
 
                 {/* Form Card */}
                 <View style={scheme === 'dark' ? styles.cardDark : styles.card}>
@@ -518,29 +507,7 @@ const styles = StyleSheet.create({
     },
 
     // Common styles
-    header: {
-        height: 120,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-        paddingTop: 50,
-        paddingHorizontal: 18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        elevation: 8,
-        shadowOpacity: 0.18,
-        shadowRadius: 10,
-    },
-    backButton: {
-        marginRight: 16,
-        padding: 4,
-    },
-    headerTitle: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: '#fff',
-        letterSpacing: 0.2,
-        fontFamily: 'Poppins_700Bold',
-    },
+   
     fieldContainer: {
         marginBottom: 22,
     },

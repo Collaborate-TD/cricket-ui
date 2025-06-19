@@ -12,6 +12,7 @@ import { getMatchUsers, requestCoach, getUnmatchUsers, handleUserRequest } from 
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'expo-router';
+import CustomHeader from '../components/CustomHeader';
 import {
     useFonts,
     Poppins_400Regular,
@@ -121,23 +122,23 @@ export default function CoachList() {
 
     return (
         <View style={scheme === 'dark' ? styles.containerDark : styles.containerLight}>
-            {/* Back Button */}
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => {
+            {/* Custom Header */}
+            <CustomHeader 
+                title="My Coaches"
+                onBackPress={() => {
                     if (router.canGoBack?.()) {
                         router.back();
                     } else {
                         router.replace('/student');
                     }
                 }}
-            >
-                <Text style={scheme === 'dark' ? styles.backArrowDark : styles.backArrowLight}>←</Text>
-            </TouchableOpacity>
+                showBackButton={true}
+                defaultRoute="/student"
+            />
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <Text style={scheme === 'dark' ? styles.titleDark : styles.titleLight}>
-                    My Coaches
+                    Current Coaches
                 </Text>
 
                 {coaches.length === 0 ? (
@@ -242,27 +243,6 @@ const styles = StyleSheet.create({
         color: '#aaaaaa'
     },
 
-    // Back button styles
-    backButton: {
-        position: 'absolute',
-        top: 48,
-        left: 20,
-        zIndex: 10,
-        padding: 8,
-        backgroundColor: 'rgba(25, 118, 210, 0.08)',
-        borderRadius: 8,
-    },
-    backArrowLight: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#1976d2',
-    },
-    backArrowDark: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#8ab4f8',
-    },
-
     // Scroll content
     scrollContent: {
         padding: 24,
@@ -274,21 +254,21 @@ const styles = StyleSheet.create({
 
     // Title styles
     titleLight: {
-        fontSize: 28,
+        fontSize: 24,
         marginBottom: 18,
         letterSpacing: 0.2,
         color: '#222f3e',
         fontFamily: 'Poppins_700Bold',
     },
     titleDark: {
-        fontSize: 28,
+        fontSize: 24,
         marginBottom: 18,
         letterSpacing: 0.2,
         color: '#f5f6fa',
         fontFamily: 'Poppins_700Bold',
     },
     titleSecondaryLight: {
-        fontSize: 28,
+        fontSize: 24,
         marginTop: 38,
         marginBottom: 18,
         letterSpacing: 0.2,
@@ -296,7 +276,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins_700Bold',
     },
     titleSecondaryDark: {
-        fontSize: 28,
+        fontSize: 24,
         marginTop: 38,
         marginBottom: 18,
         letterSpacing: 0.2,

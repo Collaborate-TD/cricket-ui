@@ -11,6 +11,7 @@ import {
     useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import CustomHeader from '../components/CustomHeader';
 
 const dummyPictures = [
     { id: 1, uri: 'https://via.placeholder.com/300x200.png?text=Drill+1', tag: 'drill' },
@@ -39,72 +40,73 @@ export default function AllPictures() {
 
     return (
         <View style={stylesSet.container}>
-            {/* Header with Back Button and Title */}
-            <View style={stylesSet.header}>
-                <TouchableOpacity style={stylesSet.backButton} onPress={() => router.back()}>
-                    <Text style={stylesSet.backText}>← Back</Text>
-                </TouchableOpacity>
-                <Text style={stylesSet.title}>Your Picture Gallery</Text>
-                <View style={{ width: 60 }} /> {/* Placeholder for spacing */}
-            </View>
-
-            {/* Search Input */}
-            <TextInput
-                placeholder="Search by keyword"
-                value={search}
-                onChangeText={setSearch}
-                style={stylesSet.searchInput}
-                placeholderTextColor={scheme === 'dark' ? '#aaa' : '#555'}
+            {/* Custom Header */}
+            <CustomHeader 
+                title="Your Picture Gallery"
+                onBackPress={() => router.back()}
+                showBackButton={true}
+                defaultRoute="/student"
             />
 
-            {/* Category Chips Scroll */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={stylesSet.categoryScroll}
-                contentContainerStyle={stylesSet.categoryContainer}
-            >
-                {categories.map((cat) => (
-                    <TouchableOpacity
-                        key={cat}
-                        style={[
-                            stylesSet.categoryChip,
-                            selectedCategory === cat && stylesSet.categoryChipSelected,
-                        ]}
-                        onPress={() => setSelectedCategory(cat)}
-                        activeOpacity={0.8}
-                    >
-                        <Text
-                            style={[
-                                stylesSet.categoryText,
-                                selectedCategory === cat && stylesSet.categoryTextSelected,
-                            ]}
-                        >
-                            {cat}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            <View style={stylesSet.content}>
+                {/* Search Input */}
+                <TextInput
+                    placeholder="Search by keyword"
+                    value={search}
+                    onChangeText={setSearch}
+                    style={stylesSet.searchInput}
+                    placeholderTextColor={scheme === 'dark' ? '#aaa' : '#555'}
+                />
 
-            {/* Pictures Scroll */}
-            <ScrollView contentContainerStyle={stylesSet.scrollContent}>
-                {filteredPictures.length === 0 ? (
-                    <Text style={stylesSet.emptyText}>No pictures found.</Text>
-                ) : (
-                    filteredPictures.map((pic) => (
-                        <View key={pic.id} style={stylesSet.imageWrapper}>
-                            <Image
-                                source={{ uri: pic.uri }}
-                                style={stylesSet.image}
-                                resizeMode="cover"
-                            />
-                            <View style={stylesSet.tagContainer}>
-                                <Text style={stylesSet.tagText}>{pic.tag.toUpperCase()}</Text>
+                {/* Category Chips Scroll */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={stylesSet.categoryScroll}
+                    contentContainerStyle={stylesSet.categoryContainer}
+                >
+                    {categories.map((cat) => (
+                        <TouchableOpacity
+                            key={cat}
+                            style={[
+                                stylesSet.categoryChip,
+                                selectedCategory === cat && stylesSet.categoryChipSelected,
+                            ]}
+                            onPress={() => setSelectedCategory(cat)}
+                            activeOpacity={0.8}
+                        >
+                            <Text
+                                style={[
+                                    stylesSet.categoryText,
+                                    selectedCategory === cat && stylesSet.categoryTextSelected,
+                                ]}
+                            >
+                                {cat}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+
+                {/* Pictures Scroll */}
+                <ScrollView contentContainerStyle={stylesSet.scrollContent}>
+                    {filteredPictures.length === 0 ? (
+                        <Text style={stylesSet.emptyText}>No pictures found.</Text>
+                    ) : (
+                        filteredPictures.map((pic) => (
+                            <View key={pic.id} style={stylesSet.imageWrapper}>
+                                <Image
+                                    source={{ uri: pic.uri }}
+                                    style={stylesSet.image}
+                                    resizeMode="cover"
+                                />
+                                <View style={stylesSet.tagContainer}>
+                                    <Text style={stylesSet.tagText}>{pic.tag.toUpperCase()}</Text>
+                                </View>
                             </View>
-                        </View>
-                    ))
-                )}
-            </ScrollView>
+                        ))
+                    )}
+                </ScrollView>
+            </View>
         </View>
     );
 }
@@ -112,26 +114,11 @@ export default function AllPictures() {
 const baseStyles = {
     container: {
         flex: 1,
-        paddingTop: 60,
+    },
+    content: {
+        flex: 1,
         paddingHorizontal: 16,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 18,
-    },
-    backButton: {
-        padding: 8,
-        borderRadius: 8,
-    },
-    backText: {
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    title: {
-        fontSize: 26,
-        fontWeight: 'bold',
+        paddingTop: 20,
     },
     searchInput: {
         borderRadius: 12,
@@ -205,18 +192,6 @@ const lightStyles = StyleSheet.create({
         ...baseStyles.container,
         backgroundColor: '#f7f9fc',
     },
-    backButton: {
-        ...baseStyles.backButton,
-        backgroundColor: '#e1e9f7',
-    },
-    backText: {
-        ...baseStyles.backText,
-        color: '#1976d2',
-    },
-    title: {
-        ...baseStyles.title,
-        color: '#222f3e',
-    },
     searchInput: {
         ...baseStyles.searchInput,
         backgroundColor: '#fff',
@@ -258,18 +233,6 @@ const darkStyles = StyleSheet.create({
     container: {
         ...baseStyles.container,
         backgroundColor: '#12161f',
-    },
-    backButton: {
-        ...baseStyles.backButton,
-        backgroundColor: '#2e3350',
-    },
-    backText: {
-        ...baseStyles.backText,
-        color: '#8ab4f8',
-    },
-    title: {
-        ...baseStyles.title,
-        color: '#e1e4eb',
     },
     searchInput: {
         ...baseStyles.searchInput,

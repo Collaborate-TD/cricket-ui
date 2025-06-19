@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import {
     View,
     Text,
@@ -6,6 +7,7 @@ import {
     ActivityIndicator,
     StyleSheet,
     useColorScheme,
+    ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getVideos } from '../services/api';
@@ -19,6 +21,7 @@ import {
     Poppins_600SemiBold,
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
+import CustomHeader from '../components/CustomHeader';
 
 export default function AllVideos() {
     const [videos, setVideos] = useState([]);
@@ -96,44 +99,45 @@ export default function AllVideos() {
 
     return (
         <View style={scheme === 'dark' ? styles.containerDark : styles.container}>
-            <TouchableOpacity
-                onPress={() => router.replace(role === 'coach' ? '/coach' : '/student')}
-                style={styles.backBtn}
-            >
-                <Text style={scheme === 'dark' ? styles.backTextDark : styles.backText}>← Back to Profile</Text>
-            </TouchableOpacity>
+            <CustomHeader 
+                title="Your Videos"
+                onBackPress={() => router.replace(role === 'coach' ? '/coach' : '/student')}
+            />
 
-            <Text style={scheme === 'dark' ? styles.headerDark : styles.header}>Your Videos</Text>
-
-            <TouchableOpacity
-                onPress={() =>
-                    router.push(
-                        params.studentId
-                            ? `/record-video?studentId=${params.studentId}`
-                            : '/record-video'
-                    )
-                }
-                activeOpacity={0.8}
-                style={styles.newRecordingContainer}
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
             >
-                <LinearGradient
-                    colors={['#8ab4f8', '#1976d2']}
-                    style={styles.newRecording}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
+                <TouchableOpacity
+                    onPress={() =>
+                        router.push(
+                            params.studentId
+                                ? `/record-video?studentId=${params.studentId}`
+                                : '/record-video'
+                        )
+                    }
+                    activeOpacity={0.8}
+                    style={styles.newRecordingContainer}
                 >
-                    <Text style={styles.recordIcon}>🎥</Text>
-                    <Text style={styles.recordText}>New Recording</Text>
-                </LinearGradient>
-            </TouchableOpacity>
+                    <LinearGradient
+                        colors={['#8ab4f8', '#1976d2']}
+                        style={styles.newRecording}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                    >
+                        <Text style={styles.recordIcon}>🎥</Text>
+                        <Text style={styles.recordText}>New Recording</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
 
-            <View style={styles.grid}>
-                {videos.length === 0 ? (
-                    <Text style={scheme === 'dark' ? styles.emptyTextDark : styles.emptyText}>No videos yet.</Text>
-                ) : (
-                    videos.map(renderItem)
-                )}
-            </View>
+                <View style={styles.grid}>
+                    {videos.length === 0 ? (
+                        <Text style={scheme === 'dark' ? styles.emptyTextDark : styles.emptyText}>No videos yet.</Text>
+                    ) : (
+                        videos.map(renderItem)
+                    )}
+                </View>
+            </ScrollView>
         </View>
     );
 }
@@ -141,14 +145,10 @@ export default function AllVideos() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingHorizontal: 16,
-        paddingTop: 28,
         backgroundColor: '#f4f8fb',
     },
     containerDark: {
         flex: 1,
-        paddingHorizontal: 16,
-        paddingTop: 28,
         backgroundColor: '#181c24',
     },
     centered: {
@@ -163,30 +163,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#181c24',
     },
-    backBtn: {
-        marginBottom: 16,
-    },
-    backText: {
-        fontSize: 16,
-        fontFamily: 'Poppins_600SemiBold',
-        color: '#1976d2',
-    },
-    backTextDark: {
-        fontSize: 16,
-        fontFamily: 'Poppins_600SemiBold',
-        color: '#8ab4f8',
-    },
-    header: {
-        fontSize: 24,
-        fontFamily: 'Poppins_700Bold',
-        marginBottom: 12,
-        color: '#222f3e',
-    },
-    headerDark: {
-        fontSize: 24,
-        fontFamily: 'Poppins_700Bold',
-        marginBottom: 12,
-        color: '#f5f6fa',
+    scrollContent: {
+        paddingHorizontal: 16,
+        paddingTop: 20,
+        paddingBottom: 40,
     },
     newRecordingContainer: {
         marginBottom: 20,

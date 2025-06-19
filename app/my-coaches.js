@@ -13,6 +13,7 @@ import { getMyCoaches, getCoachProfile } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'expo-router';
+import CustomHeader from '../components/CustomHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -50,27 +51,24 @@ export default function MyCoaches() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1976d2" />
+      <View style={styles.background}>
+        <CustomHeader 
+          title="My Coaches"
+          defaultRoute="/student"
+        />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#1976d2" />
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.background}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => {
-          if (router.canGoBack?.()) {
-            router.back();
-          } else {
-            router.replace('/student');
-          }
-        }}
-      >
-        <Text style={styles.backArrow}>←</Text>
-      </TouchableOpacity>
-      <Text style={styles.title}>My Coaches</Text>
+      <CustomHeader 
+        title="My Coaches"
+        defaultRoute="/student"
+      />
       <FlatList
         data={coaches}
         keyExtractor={item => item._id}
@@ -135,33 +133,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f4f8fb',
     paddingTop: 0,
   },
-  backButton: {
-    position: 'absolute',
-    top: 44,
-    left: 20,
-    zIndex: 2,
-    padding: 8,
-    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-    borderRadius: 8,
-  },
-  backArrow: {
-    fontSize: 32,
-    color: '#1976d2',
-    fontWeight: 'bold',
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#1976d2',
-    marginTop: 60,
-    marginBottom: 24,
-    textAlign: 'center',
-    letterSpacing: 0.5,
-  },
   listContent: {
     paddingHorizontal: 18,
     paddingBottom: 40,
-    paddingTop: 0,
+    paddingTop: 16,
   },
   coachCard: {
     flexDirection: 'row',
@@ -221,7 +196,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f4f8fb',
   },
   modalOverlay: {
     flex: 1,

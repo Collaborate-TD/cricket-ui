@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { getFavourites, toggleFavourite } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
+import CustomHeader from '../components/CustomHeader'; // Import CustomHeader
 
 export default function FavouritesPage() {
     const [favourites, setFavourites] = useState([]);
@@ -85,50 +86,59 @@ export default function FavouritesPage() {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#1976d2" />
+            <View style={styles.container}>
+                <CustomHeader 
+                    title="Your Favourites"
+                    defaultRoute="/student"
+                />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#1976d2" />
+                </View>
             </View>
         );
     }
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                <Text style={styles.backText}>← Back</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.header}>Your Favourites</Text>
-            <View style={styles.controls}>
-                <TextInput
-                    value={searchText}
-                    onChangeText={handleSearch}
-                    placeholder="Search by title..."
-                    style={styles.search}
-                />
-                <View style={styles.toggleRow}>
-                    <Text style={styles.toggleLabel}>Grid View</Text>
-                    <Switch
-                        value={viewType === 'grid'}
-                        onValueChange={() => setViewType(viewType === 'grid' ? 'list' : 'grid')}
+            <CustomHeader 
+                title="Your Favourites"
+                defaultRoute="/student"
+            />
+            
+            <View style={styles.content}>
+                <View style={styles.controls}>
+                    <TextInput
+                        value={searchText}
+                        onChangeText={handleSearch}
+                        placeholder="Search by title..."
+                        style={styles.search}
                     />
+                    <View style={styles.toggleRow}>
+                        <Text style={styles.toggleLabel}>Grid View</Text>
+                        <Switch
+                            value={viewType === 'grid'}
+                            onValueChange={() => setViewType(viewType === 'grid' ? 'list' : 'grid')}
+                        />
+                    </View>
                 </View>
-            </View>
 
-            {filtered.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>You haven't saved any favourites yet!</Text>
-                    <TouchableOpacity onPress={() => router.push('/all-videos')}>
-                        <Text style={styles.browseBtn}>Browse Videos</Text>
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <FlatList
-                    data={filtered}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item._id}
-                    contentContainerStyle={styles.flatListContent}
-                />
-            )}
+                {filtered.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>You haven't saved any favourites yet!</Text>
+                        <TouchableOpacity onPress={() => router.push('/all-videos')}>
+                            <Text style={styles.browseBtn}>Browse Videos</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filtered}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item._id}
+                        contentContainerStyle={styles.flatListContent}
+                        showsVerticalScrollIndicator={false}
+                    />
+                )}
+            </View>
         </View>
     );
 }
@@ -136,21 +146,11 @@ export default function FavouritesPage() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
         backgroundColor: '#f4f8fb'
     },
-    backBtn: {
-        marginBottom: 12
-    },
-    backText: {
-        fontSize: 16,
-        color: '#1976d2',
-        fontWeight: 'bold'
-    },
-    header: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 16
+    content: {
+        flex: 1,
+        padding: 16,
     },
     controls: {
         marginBottom: 16
@@ -162,6 +162,7 @@ const styles = StyleSheet.create({
         borderColor: '#ccc',
         backgroundColor: '#fff',
         marginBottom: 12,
+        fontSize: 16,
     },
     toggleRow: {
         flexDirection: 'row',
@@ -169,7 +170,8 @@ const styles = StyleSheet.create({
     },
     toggleLabel: {
         marginRight: 8,
-        fontSize: 16
+        fontSize: 16,
+        fontWeight: '500',
     },
     card: {
         backgroundColor: '#fff',
@@ -177,6 +179,10 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         overflow: 'hidden',
         elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     listCard: {
         backgroundColor: '#fff',
@@ -184,7 +190,11 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         overflow: 'hidden',
         elevation: 2,
-        flexDirection: 'row'
+        flexDirection: 'row',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     thumbnail: {
         width: '100%',
@@ -196,32 +206,40 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 16,
-        fontWeight: '600'
+        fontWeight: '600',
+        marginBottom: 4,
+        color: '#333',
     },
     meta: {
         fontSize: 12,
-        color: '#777'
+        color: '#777',
+        marginBottom: 2,
     },
     notes: {
         fontSize: 13,
-        marginVertical: 4
+        marginVertical: 4,
+        color: '#555',
     },
     unfav: {
         color: '#d32f2f',
-        marginTop: 8
+        marginTop: 8,
+        fontWeight: '500',
     },
     emptyContainer: {
         alignItems: 'center',
-        marginTop: 40
+        marginTop: 40,
+        paddingHorizontal: 20,
     },
     emptyText: {
         fontSize: 16,
         color: '#555',
-        marginBottom: 16
+        marginBottom: 16,
+        textAlign: 'center',
     },
     browseBtn: {
         fontSize: 16,
-        color: '#1976d2'
+        color: '#1976d2',
+        fontWeight: '600',
     },
     loadingContainer: {
         flex: 1,

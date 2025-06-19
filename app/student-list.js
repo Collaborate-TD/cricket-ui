@@ -20,6 +20,7 @@ import {
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'expo-router';
+import CustomHeader from '../components/CustomHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -99,6 +100,14 @@ export default function StudentList() {
     }
   };
 
+  const handleBackPress = () => {
+    if (router.canGoBack?.()) {
+      router.back();
+    } else {
+      router.replace('/coach');
+    }
+  };
+
   const StudentCard = ({ student, children }) => (
     <View style={styles.studentCard}>
       <View>
@@ -112,28 +121,31 @@ export default function StudentList() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1976d2" />
+      <View style={styles.background}>
+        <CustomHeader 
+          title="My Students" 
+          onBackPress={handleBackPress}
+          defaultRoute="/coach"
+        />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#1976d2" />
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.background}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => {
-          if (router.canGoBack?.()) router.back();
-          else router.replace('/coach');
-        }}
-      >
-        <Text style={styles.backArrow}>←</Text>
-      </TouchableOpacity>
+      <CustomHeader 
+        title="My Students" 
+        onBackPress={handleBackPress}
+        defaultRoute="/coach"
+      />
 
       <FlatList
         ListHeaderComponent={
           <>
-            <Text style={styles.title}>My Students</Text>
+            <Text style={styles.title}>Approved Students</Text>
             {matchedStudents.length === 0 && <Text style={styles.emptyText}>No approved students yet.</Text>}
           </>
         }
@@ -222,26 +234,10 @@ export default function StudentList() {
   );
 }
 
-// 🔽 CSS MOVED TO END BELOW 🔽
 const styles = StyleSheet.create({
   background: {
     flex: 1,
     backgroundColor: '#f4f8fb',
-    paddingTop: 0,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 48,
-    left: 20,
-    zIndex: 10,
-    padding: 8,
-    backgroundColor: 'rgba(25, 118, 210, 0.08)',
-    borderRadius: 8,
-  },
-  backArrow: {
-    fontSize: 32,
-    color: '#1976d2',
-    fontWeight: 'bold',
   },
   scrollContent: {
     padding: 24,
@@ -251,7 +247,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     marginBottom: 18,
     letterSpacing: 0.2,
     color: '#1976d2',
@@ -259,7 +255,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   titleMore: {
-    fontSize: 28,
+    fontSize: 24,
     marginTop: 38,
     marginBottom: 18,
     letterSpacing: 0.2,
@@ -372,7 +368,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f4f8fb',
   },
   modalOverlay: {
     flex: 1,
