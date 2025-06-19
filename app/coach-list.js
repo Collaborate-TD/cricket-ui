@@ -7,8 +7,9 @@ import {
     Alert,
     useColorScheme,
     ScrollView,
+    Modal,
 } from 'react-native';
-import { getMatchUsers, requestCoach, getUnmatchUsers, handleUserRequest } from '../services/api';
+import { getMatchUsers, requestCoach, getUnmatchUsers, handleUserRequest, getStudentProfile } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'expo-router';
@@ -24,6 +25,7 @@ export default function CoachList() {
     const [coaches, setCoaches] = useState([]);
     const [myRequests, setMyRequests] = useState([]);
     const [studentId, setStudentId] = useState('');
+    const [profileModal, setProfileModal] = useState({ visible: false, coach: null });
     const scheme = useColorScheme();
     const router = useRouter();
 
@@ -38,6 +40,7 @@ export default function CoachList() {
     const refreshCoachLists = async (sid) => {
         try {
             const [coachRes, requestsRes] = await Promise.all([getMatchUsers(sid), getUnmatchUsers(sid)]);
+            console.log('Coaches:', coachRes.data);
             setCoaches(Array.isArray(coachRes.data) ? coachRes.data : []);
             setMyRequests(Array.isArray(requestsRes.data) ? requestsRes.data : []);
         } catch (err) {
@@ -51,6 +54,7 @@ export default function CoachList() {
             const user = jwtDecode(token);
             const sid = user.id || user._id;
             setStudentId(sid);
+            console.log('Student ID:', sid);
             await refreshCoachLists(sid);
         };
         fetchData();
@@ -94,6 +98,16 @@ export default function CoachList() {
             await refreshCoachLists(studentId);
         } catch (err) {
             Alert.alert('Error', 'Could not reject request.');
+        }
+    };
+
+    const handleViewProfile = async (coachId) => {
+        try {
+            // You may need to create a getCoachProfile API similar to getStudentProfile
+            const res = await getStudentProfile(coachId); // Or getCoachProfile if available
+            setProfileModal({ visible: true, coach: res.data });
+        } catch {
+            Alert.alert('Error', 'Failed to fetch coach profile.');
         }
     };
 
@@ -152,7 +166,7 @@ export default function CoachList() {
                     coaches.map((coach) => (
                         <CoachCard key={coach._id} coach={coach}>
                             <TouchableOpacity
-                                onPress={() => router.push(`/pi/${coach._id}`)}
+                                onPress={() => handleViewProfile(coach._id)}
                                 style={scheme === 'dark' ? styles.viewBtnDark : styles.viewBtnLight}
                             >
                                 <Text style={scheme === 'dark' ? styles.actionBtnTextDark : styles.actionBtnTextLight}>View</Text>
@@ -217,6 +231,49 @@ export default function CoachList() {
                     ))
                 )}
             </ScrollView>
+
+
+            {/* Profile Modal */}
+            <Modal
+                visible={profileModal.visible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setProfileModal({ visible: false, coach: null })}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        {profileModal.coach && (
+                            <>
+                                <Text style={styles.profileTitle}>Coach Profile</Text>
+                                <View style={styles.profileRow}>
+                                    <Text style={styles.profileLabel}>Name:</Text>
+                                    <Text style={styles.profileValue}>{profileModal.coach.firstName} {profileModal.coach.lastName}</Text>
+                                </View>
+                                <View style={styles.profileRow}>
+                                    <Text style={styles.profileLabel}>Email:</Text>
+                                    <Text style={styles.profileValue}>{profileModal.coach.email}</Text>
+                                </View>
+                                <View style={styles.profileRow}>
+                                    <Text style={styles.profileLabel}>Username:</Text>
+                                    <Text style={styles.profileValue}>{profileModal.coach.userName}</Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={styles.feedbackBtn}
+                                    onPress={() => router.push(`/all-videos?coachId=${profileModal.coach._id}`)}
+                                >
+                                    <Text style={styles.feedbackBtnText}>View Feedbacks</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                        <TouchableOpacity
+                            style={[styles.profileBtn, { marginTop: 16 }]}
+                            onPress={() => setProfileModal({ visible: false, coach: null })}
+                        >
+                            <Text style={styles.profileBtnText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -518,5 +575,68 @@ const styles = StyleSheet.create({
         marginVertical: 20,
         opacity: 0.8,
         color: '#aaaaaa',
+    },
+
+    // Modal styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        padding: 24,
+        borderRadius: 10,
+        width: '80%',
+        elevation: 5,
+    },
+    profileTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 18,
+        color: '#1976d2',
+        alignSelf: 'center',
+    },
+    profileRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    profileLabel: {
+        fontWeight: 'bold',
+        color: '#444',
+        width: 90,
+        fontSize: 16,
+    },
+    profileValue: {
+        flex: 1,
+        fontSize: 16,
+        color: '#333',
+        fontFamily: 'Poppins_400Regular',
+    },
+    feedbackBtn: {
+        marginTop: 12,
+        paddingVertical: 10,
+        borderRadius: 8,
+        backgroundColor: '#1976d2',
+        alignItems: 'center',
+    },
+    feedbackBtnText: {
+        color: '#fff',
+        fontSize: 16,
+        fontFamily: 'Poppins_600SemiBold',
+    },
+    profileBtn: {
+        marginTop: 12,
+        paddingVertical: 10,
+        borderRadius: 8,
+        backgroundColor: '#e0e0e0',
+        alignItems: 'center',
+    },
+    profileBtnText: {
+        color: '#333',
+        fontSize: 16,
+        fontFamily: 'Poppins_600SemiBold',
     },
 });
