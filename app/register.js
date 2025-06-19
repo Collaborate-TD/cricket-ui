@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         right: 12,
         top: '50%',
-        transform: [{ translateY: -11 }],
+        transform: [{ translateY: -20 }],
         zIndex: 1,
         padding: 4,
     },

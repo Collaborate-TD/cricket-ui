@@ -97,6 +97,9 @@ export default function CoachList() {
         }
     };
 
+    const truncate = (str, maxLength) =>
+        str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
+
     if (!fontsLoaded) {
         return (
             <View style={scheme === 'dark' ? styles.centeredDark : styles.centeredLight}>
@@ -110,7 +113,7 @@ export default function CoachList() {
         <View style={scheme === 'dark' ? styles.coachCardDark : styles.coachCardLight}>
             <View>
                 <Text style={scheme === 'dark' ? styles.coachNameDark : styles.coachNameLight}>
-                    {coach.firstName} {coach.lastName}
+                    {truncate(`${coach.firstName} ${coach.lastName}`, 15)}
                 </Text>
                 <Text style={scheme === 'dark' ? styles.coachEmailDark : styles.coachEmailLight}>
                     {coach.email || ''}
@@ -123,7 +126,7 @@ export default function CoachList() {
     return (
         <View style={scheme === 'dark' ? styles.containerDark : styles.containerLight}>
             {/* Custom Header */}
-            <CustomHeader 
+            <CustomHeader
                 title="My Coaches"
                 onBackPress={() => {
                     if (router.canGoBack?.()) {
@@ -154,12 +157,12 @@ export default function CoachList() {
                             >
                                 <Text style={scheme === 'dark' ? styles.actionBtnTextDark : styles.actionBtnTextLight}>View</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
+                            {/* <TouchableOpacity
                                 onPress={() => router.push(`/chat/${coach._id}`)}
                                 style={scheme === 'dark' ? styles.messageBtnDark : styles.messageBtnLight}
                             >
                                 <Text style={scheme === 'dark' ? styles.actionBtnTextDark : styles.actionBtnTextLight}>Message</Text>
-                            </TouchableOpacity>
+                            </TouchableOpacity> */}
                         </CoachCard>
                     ))
                 )}
@@ -180,16 +183,24 @@ export default function CoachList() {
                             ) : coach.status === 'requested' && coach.requestType === 'received' ? (
                                 <>
                                     <TouchableOpacity
-                                        style={scheme === 'dark' ? styles.acceptBtnDark : styles.acceptBtnLight}
+                                        style={styles.actionBtn}
                                         onPress={() => handleAcceptRequest(coach.userId)}
                                     >
-                                        <Text style={styles.btnText}>Accept</Text>
+                                        <Text
+                                            style={scheme === 'dark' ? styles.acceptBtnDark : styles.acceptBtnLight}
+                                        >
+                                            ✔
+                                        </Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
-                                        style={scheme === 'dark' ? styles.rejectBtnDark : styles.rejectBtnLight}
+                                        style={styles.actionBtn}
                                         onPress={() => handleRejectRequest(coach.userId)}
                                     >
-                                        <Text style={styles.btnText}>Reject</Text>
+                                        <Text
+                                            style={scheme === 'dark' ? styles.rejectBtnDark : styles.rejectBtnLight}
+                                        >
+                                            ✖
+                                        </Text>
                                     </TouchableOpacity>
                                 </>
                             ) : coach.status === 'rejected' ? (
@@ -442,35 +453,29 @@ const styles = StyleSheet.create({
         marginLeft: 4,
         backgroundColor: '#3b5998',
     },
-
+    actionBtn: {
+        paddingHorizontal: 8,
+        paddingVertical: 9,
+        borderRadius: 8,
+    },
     // Accept button styles
     acceptBtnLight: {
-        paddingHorizontal: 18,
-        paddingVertical: 9,
-        borderRadius: 8,
-        marginRight: 8,
-        backgroundColor: '#1976d2',
+        fontSize: 26,
+        color: '#22C55E',
     },
     acceptBtnDark: {
-        paddingHorizontal: 18,
-        paddingVertical: 9,
-        borderRadius: 8,
-        marginRight: 8,
-        backgroundColor: '#3b5998',
+        fontSize: 26,
+        color: '#4CAF50',
     },
 
     // Reject button styles
     rejectBtnLight: {
-        paddingHorizontal: 18,
-        paddingVertical: 9,
-        borderRadius: 8,
-        backgroundColor: '#d9534f',
+        fontSize: 26,
+        color: '#EF4444',
     },
     rejectBtnDark: {
-        paddingHorizontal: 18,
-        paddingVertical: 9,
-        borderRadius: 8,
-        backgroundColor: '#d9534f',
+        fontSize: 26,
+        color: '#F44336',
     },
 
     // Button text

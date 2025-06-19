@@ -197,7 +197,8 @@ const styles = StyleSheet.create({
     showHideBtn: {
         position: 'absolute',
         right: 12,
-        top: '30%',
+        top: '50%',
+        transform: [{ translateY: -20 }],
         zIndex: 10,
         padding: 4,
     },
