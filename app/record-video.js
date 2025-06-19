@@ -104,17 +104,17 @@ export default function RecordVideoScreen() {
       <View style={styles.center}>
         <Text>No access to camera</Text>
         <TouchableOpacity onPress={requestPermission}>
-          <Text style={{ color: 'blue' }}>Grant Permission</Text>
+          <Text style={styles.permissionText}>Grant Permission</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <CameraView
         ref={cameraRef}
-        style={{ flex: 1 }}
+        style={styles.camera}
         mode="video"
         facing="back"
         onCameraReady={() => setIsReady(true)}
@@ -135,6 +135,12 @@ export default function RecordVideoScreen() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  camera: {
+    flex: 1,
+  },
   controls: {
     position: 'absolute',
     bottom: 30,
@@ -154,6 +160,18 @@ const styles = StyleSheet.create({
   },
   center: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  permissionText: {
+    color: 'blue',
+  },
+  menuIconCircle: {
+    
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },

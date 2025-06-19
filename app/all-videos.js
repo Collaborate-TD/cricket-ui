@@ -1,17 +1,41 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet } from 'react-native';
+
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    ActivityIndicator,
+    StyleSheet,
+    useColorScheme,
+    ScrollView,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getVideos } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { Video } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+    useFonts,
+    Poppins_400Regular,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
+import CustomHeader from '../components/CustomHeader';
 
 export default function AllVideos() {
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [role, setRole] = useState('student'); // default to student
+    const [role, setRole] = useState('student');
     const router = useRouter();
     const params = useLocalSearchParams();
+    const scheme = useColorScheme();
+
+    const [fontsLoaded] = useFonts({
+        Poppins_400Regular,
+        Poppins_600SemiBold,
+        Poppins_700Bold,
+    });
 
     useEffect(() => {
         const getRole = async () => {
@@ -26,17 +50,15 @@ export default function AllVideos() {
         const fetchVideos = async () => {
             setLoading(true);
             try {
-                let filter = {};
                 const token = await getToken();
                 const user = jwtDecode(token);
-
-                params.studentId && (filter.studentId = params.studentId);
-                params.coachId && (filter.coachId = params.coachId);
-
-                filter.userId = user.id || user._id;
+                const filter = {
+                    ...(params.studentId && { studentId: params.studentId }),
+                    ...(params.coachId && { coachId: params.coachId }),
+                    userId: user.id || user._id,
+                };
                 const res = await getVideos(filter);
-                // console.log('Fetched Videos:', res.data);
-                setVideos(res.data.list);
+                setVideos(res.data.list || []);
             } catch (err) {
                 console.error('Failed to fetch videos:', err);
                 setVideos([]);
@@ -47,104 +69,179 @@ export default function AllVideos() {
         fetchVideos();
     }, [params.studentId, params.coachId]);
 
-    const renderItem = ({ item }) => (
-        <TouchableOpacity style={styles.card} onPress={() => router.push(`/video-review/${item._id}`)}>
+    const renderItem = (item) => (
+        <TouchableOpacity
+            key={item._id}
+            style={scheme === 'dark' ? styles.cardDark : styles.card}
+            onPress={() => router.push(`/video-review/${item._id}`)}
+            activeOpacity={0.9}
+        >
             <Video
                 source={{ uri: item.url }}
                 style={styles.thumbnail}
                 resizeMode="cover"
                 isMuted
                 shouldPlay={false}
-                {...(item.thumbnailUrl
-                    ? {
-                        usePoster: true,
-                        posterSource: { uri: item.thumbnailUrl }
-                    }
-                    : {})}
+                usePoster={!!item.thumbnailUrl}
+                posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
             />
-            <Text style={styles.title}>{item.title}</Text>
+            <Text style={scheme === 'dark' ? styles.titleDark : styles.title}>{item.title}</Text>
         </TouchableOpacity>
     );
 
+    if (!fontsLoaded || loading) {
+        return (
+            <View style={scheme === 'dark' ? styles.centeredDark : styles.centered}>
+                <ActivityIndicator size="large" color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
+            </View>
+        );
+    }
+
     return (
-        <View style={styles.container}>
-            <TouchableOpacity
-                style={{ marginBottom: 16 }}
-                onPress={() => {
-                    // Change route based on role
-                    if (role === 'coach') {
-                        router.replace('/coach');
-                    } else {
-                        router.replace('/student');
-                    }
-                }}
-            >
-                <Text style={{ fontSize: 18, color: '#1976d2' }}>← Back to Profile</Text>
-            </TouchableOpacity>
-            <Text style={styles.header}>Videos</Text>
-            <FlatList
-                data={videos}
-                renderItem={renderItem}
-                keyExtractor={item => item._id}
-                numColumns={2}
-                ListEmptyComponent={
-                    loading
-                        ? <Text style={{ textAlign: 'center', marginTop: 32 }}>Loading...</Text>
-                        : <Text style={{ textAlign: 'center', marginTop: 32 }}>No videos yet.</Text>
-                }
-                ListFooterComponent={
-                    <TouchableOpacity style={styles.newRecording} onPress={() => {
-                        if (params.studentId) {
-                            router.push(`/record-video?studentId=${params.studentId}`);
-                        } else {
-                            router.push('/record-video');
-                        }
-                    }}>
-                        <Text style={styles.newRecordingIcon}>🎥</Text>
-                        <Text>New Recording</Text>
-                    </TouchableOpacity>
-                }
+        <View style={scheme === 'dark' ? styles.containerDark : styles.container}>
+            <CustomHeader 
+                title="Your Videos"
+                onBackPress={() => router.replace(role === 'coach' ? '/coach' : '/student')}
             />
+
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <TouchableOpacity
+                    onPress={() =>
+                        router.push(
+                            params.studentId
+                                ? `/record-video?studentId=${params.studentId}`
+                                : '/record-video'
+                        )
+                    }
+                    activeOpacity={0.8}
+                    style={styles.newRecordingContainer}
+                >
+                    <LinearGradient
+                        colors={['#8ab4f8', '#1976d2']}
+                        style={styles.newRecording}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                    >
+                        <Text style={styles.recordIcon}>🎥</Text>
+                        <Text style={styles.recordText}>New Recording</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+
+                <View style={styles.grid}>
+                    {videos.length === 0 ? (
+                        <Text style={scheme === 'dark' ? styles.emptyTextDark : styles.emptyText}>No videos yet.</Text>
+                    ) : (
+                        videos.map(renderItem)
+                    )}
+                </View>
+            </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff', paddingVertical: 16, paddingHorizontal: 0 },
-    header: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-    card: {
+    container: {
         flex: 1,
-        margin: 8,
-        alignItems: 'stretch',
-        backgroundColor: '#eee',
-        borderRadius: 8,
-        // Remove padding here to allow thumbnail to fill width
-        minWidth: 0,
+        backgroundColor: '#f4f8fb',
+    },
+    containerDark: {
+        flex: 1,
+        backgroundColor: '#181c24',
+    },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f4f8fb',
+    },
+    centeredDark: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#181c24',
+    },
+    scrollContent: {
+        paddingHorizontal: 16,
+        paddingTop: 20,
+        paddingBottom: 40,
+    },
+    newRecordingContainer: {
+        marginBottom: 20,
+    },
+    newRecording: {
+        padding: 20,
+        borderRadius: 16,
+        alignItems: 'center',
+    },
+    recordIcon: {
+        fontSize: 36,
+        marginBottom: 8,
+        color: '#fff',
+    },
+    recordText: {
+        fontSize: 16,
+        fontFamily: 'Poppins_600SemiBold',
+        color: '#fff',
+    },
+    grid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    card: {
+        width: '48%',
+        marginBottom: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
+        borderColor: '#e0e0e0',
+    },
+    cardDark: {
+        width: '48%',
+        marginBottom: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        overflow: 'hidden',
+        backgroundColor: '#23243a',
+        borderColor: '#333',
     },
     thumbnail: {
         width: '100%',
         aspectRatio: 16 / 9,
-        borderRadius: 8,
         backgroundColor: '#ccc',
     },
-    title: { marginTop: 8, fontWeight: 'bold', textAlign: 'center' },
-    newRecording: {
-        flex: 1,
-        margin: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: '#1976d2',
-        borderRadius: 8,
-        padding: 16
+    title: {
+        padding: 10,
+        fontSize: 13,
+        fontFamily: 'Poppins_600SemiBold',
+        textAlign: 'center',
+        color: '#222f3e',
     },
-    newRecordingIcon: { fontSize: 40, marginBottom: 8 },
-    video: {
+    titleDark: {
+        padding: 10,
+        fontSize: 13,
+        fontFamily: 'Poppins_600SemiBold',
+        textAlign: 'center',
+        color: '#f5f6fa',
+    },
+    emptyText: {
+        fontSize: 16,
+        textAlign: 'center',
+        paddingTop: 40,
+        fontFamily: 'Poppins_400Regular',
         width: '100%',
-        aspectRatio: 16 / 9,
-        backgroundColor: '#000',
-        borderRadius: 8,
-        alignSelf: 'center',
-        maxWidth: 600,
+        color: '#222f3e',
+    },
+    emptyTextDark: {
+        fontSize: 16,
+        textAlign: 'center',
+        paddingTop: 40,
+        fontFamily: 'Poppins_400Regular',
+        width: '100%',
+        color: '#f5f6fa',
     },
 });
