@@ -207,65 +207,51 @@ export default function FavouritesPage() {
     };
 
     const handleVideoPress = (item) => {
-        Alert.alert(
-            "Video Options",
-            "What would you like to do?",
-            [
-                {
-                    text: "Watch Video",
-                    onPress: () => router.push(`/video-review/${item._id}`)
-                },
-                {
-                    text: "Remove from Favorites",
-                    onPress: () => handleUnfavourite(item._id),
-                    style: "destructive"
-                },
-                {
-                    text: "Cancel",
-                    style: "cancel"
-                }
-            ]
-        );
+        router.push(`/video-review/${item._id}`);
     };
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity 
-            style={viewType === 'list' ? styles.listCard : styles.card}
-            onPress={() => handleVideoPress(item)}
-        >
-            {item.type === 'video' ? (
-                <View style={styles.videoContainer}>
-                    <Video
-                        source={{ uri: item.url }}
-                        style={styles.thumbnail}
-                        resizeMode="cover"
-                        isMuted
-                        shouldPlay={false}
-                        {...(item.thumbnailUrl
-                            ? {
-                                usePoster: true,
-                                posterSource: { uri: item.thumbnailUrl }
-                            }
-                            : {})}
-                    />
-                    <View style={styles.favoriteIndicator}>
-                        <Text style={styles.favoriteIcon}>❤️</Text>
+        <View style={viewType === 'list' ? styles.listCard : styles.card}>
+            <TouchableOpacity onPress={() => handleVideoPress(item)}>
+                {item.type === 'video' ? (
+                    <View style={styles.videoContainer}>
+                        <Video
+                            source={{ uri: item.url }}
+                            style={styles.thumbnail}
+                            resizeMode="cover"
+                            isMuted
+                            shouldPlay={false}
+                            {...(item.thumbnailUrl
+                                ? {
+                                    usePoster: true,
+                                    posterSource: { uri: item.thumbnailUrl }
+                                }
+                                : {})}
+                        />
+                        <View style={styles.favoriteIndicator}>
+                            <Text style={styles.favoriteIcon}>❤️</Text>
+                        </View>
                     </View>
+                ) : (
+                    <Image source={{ uri: item.url }} style={styles.thumbnail} />
+                )}
+                <View style={styles.infoContainer}>
+                    <Text style={styles.title}>{item.title}</Text>
+                    <Text style={styles.meta}>Coach: {item.coachName}</Text>
+                    <Text style={styles.meta}>Date: {item.date}</Text>
+                    <Text style={styles.meta}>Tags: {item.tags?.join(', ') || 'None'}</Text>
+                    <Text style={styles.notes}>Note: {item.note || 'No notes added'}</Text>
                 </View>
-            ) : (
-                <Image source={{ uri: item.url }} style={styles.thumbnail} />
-            )}
-            <View style={styles.infoContainer}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.meta}>Coach: {item.coachName}</Text>
-                <Text style={styles.meta}>Date: {item.date}</Text>
-                <Text style={styles.meta}>Tags: {item.tags?.join(', ') || 'None'}</Text>
-                <Text style={styles.notes}>Note: {item.note || 'No notes added'}</Text>
-                <TouchableOpacity onPress={() => handleUnfavourite(item._id)}>
-                    <Text style={styles.unfav}>❤️ Remove</Text>
-                </TouchableOpacity>
-            </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+            
+            {/* Remove Button */}
+            <TouchableOpacity 
+                style={styles.removeButton} 
+                onPress={() => handleUnfavourite(item._id)}
+            >
+                <Text style={styles.removeButtonText}>💔 Remove from Favorites</Text>
+            </TouchableOpacity>
+        </View>
     );
 
     if (loading) {
@@ -399,7 +385,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         overflow: 'hidden',
         elevation: 2,
-        flexDirection: 'row',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -446,10 +431,21 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         color: '#555',
     },
-    unfav: {
-        color: '#d32f2f',
-        marginTop: 8,
-        fontWeight: '500',
+    removeButton: {
+        backgroundColor: '#ffe6e6',
+        marginHorizontal: 12,
+        marginBottom: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ffb3b3',
+        alignItems: 'center',
+    },
+    removeButtonText: {
+        color: '#d63384',
+        fontSize: 14,
+        fontWeight: '600',
     },
     emptyContainer: {
         alignItems: 'center',

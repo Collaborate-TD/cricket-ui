@@ -76,28 +76,7 @@ export default function AllVideos() {
     };
 
     const handleVideoPress = (item) => {
-        Alert.alert(
-            "Video Options",
-            "What would you like to do?",
-            [
-                {
-                    text: "Watch Video",
-                    onPress: () => router.push(`/video-review/${item._id}`)
-                },
-                {
-                    text: favorites.includes(item._id) ? "Remove from Favorites" : "Add to Favorites",
-                    onPress: () => toggleFavorite(item._id)
-                },
-                {
-                    text: "View Favorites",
-                    onPress: () => router.push('/favourites')
-                },
-                {
-                    text: "Cancel",
-                    style: "cancel"
-                }
-            ]
-        );
+        router.push(`/video-review/${item._id}`);
     };
 
     useEffect(() => {
@@ -125,29 +104,39 @@ export default function AllVideos() {
     }, [params.studentId, params.coachId]);
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity style={styles.card} onPress={() => handleVideoPress(item)}>
-            <View style={styles.videoContainer}>
-                <Video
-                    source={{ uri: item.url }}
-                    style={styles.thumbnail}
-                    resizeMode="cover"
-                    isMuted
-                    shouldPlay={false}
-                    {...(item.thumbnailUrl
-                        ? {
-                            usePoster: true,
-                            posterSource: { uri: item.thumbnailUrl }
-                        }
-                        : {})}
-                />
-                {favorites.includes(item._id) && (
-                    <View style={styles.favoriteIndicator}>
-                        <Text style={styles.favoriteIcon}>❤️</Text>
-                    </View>
-                )}
+        <View style={styles.card}>
+            <TouchableOpacity onPress={() => handleVideoPress(item)}>
+                <View style={styles.videoContainer}>
+                    <Video
+                        source={{ uri: item.url }}
+                        style={styles.thumbnail}
+                        resizeMode="cover"
+                        isMuted
+                        shouldPlay={false}
+                        {...(item.thumbnailUrl
+                            ? {
+                                usePoster: true,
+                                posterSource: { uri: item.thumbnailUrl }
+                            }
+                            : {})}
+                    />
+                </View>
+            </TouchableOpacity>
+            
+            {/* Heart Icon positioned above title */}
+            <View style={styles.titleContainer}>
+                <TouchableOpacity
+                    style={styles.heartIcon}
+                    onPress={() => toggleFavorite(item._id)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                    <Text style={styles.heartText}>
+                        {favorites.includes(item._id) ? '❤️' : '🤍'}
+                    </Text>
+                </TouchableOpacity>
+                <Text style={styles.title}>{item.title}</Text>
             </View>
-            <Text style={styles.title}>{item.title}</Text>
-        </TouchableOpacity>
+        </View>
     );
 
     return (
@@ -247,6 +236,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#eee',
         borderRadius: 8,
         minWidth: 0,
+        paddingBottom: 8,
     },
     videoContainer: {
         position: 'relative',
@@ -257,40 +247,49 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         backgroundColor: '#ccc',
     },
-    favoriteIndicator: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        borderRadius: 15,
-        width: 30,
-        height: 30,
-        justifyContent: 'center',
+    titleContainer: {
         alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingTop: 8,
+        position: 'relative',
+        paddingTop: 32, // Extra space for the heart icon
     },
-    favoriteIcon: {
-        fontSize: 16,
+    heartIcon: {
+        position: 'absolute',
+        right: 8,
+        top: 4,
+        padding: 4,
+        zIndex: 1,
+    },
+    heartText: {
+        fontSize: 20,
     },
     title: { 
-        marginTop: 8, 
-        marginBottom: 8,
-        marginHorizontal: 8,
         fontWeight: 'bold', 
-        textAlign: 'center' 
+        textAlign: 'center',
+        fontSize: 14,
+        marginTop: 4,
     },
-    newRecording: {
-        flex: 1,
-        margin: 8,
+    newRecordingTop: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: '#1976d2',
+        backgroundColor: '#e3f2fd',
+        marginBottom: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         borderRadius: 8,
-        padding: 16
+        borderWidth: 1,
+        borderColor: '#1976d2',
     },
     newRecordingIcon: { 
-        fontSize: 40, 
-        marginBottom: 8 
+        fontSize: 20, 
+        marginRight: 8 
+    },
+    newRecordingText: {
+        fontSize: 16,
+        color: '#1976d2',
+        fontWeight: '600',
     },
     emptyText: {
         textAlign: 'center',
