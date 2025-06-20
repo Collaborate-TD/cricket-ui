@@ -1,5 +1,5 @@
 // FavouritePage.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -10,13 +10,15 @@ import {
     Switch,
     ActivityIndicator,
     Image,
+    Alert,
 } from 'react-native';
 import { Video } from 'expo-av';
-import { useRouter } from 'expo-router';
-import { getFavourites, toggleFavourite } from '../services/api';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { getFavourites, toggleFavourite, getVideos } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
-import CustomHeader from '../components/CustomHeader'; // Import CustomHeader
+import CustomHeader from '../components/CustomHeader';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function FavouritesPage() {
     const [favourites, setFavourites] = useState([]);
@@ -24,26 +26,107 @@ export default function FavouritesPage() {
     const [searchText, setSearchText] = useState('');
     const [viewType, setViewType] = useState('grid');
     const [loading, setLoading] = useState(true);
+    const [localFavorites, setLocalFavorites] = useState([]);
     const router = useRouter();
 
-    useEffect(() => {
-        fetchFavourites();
-    }, []);
+    // Load local favorites from AsyncStorage
+    const loadLocalFavorites = async () => {
+        try {
+            const token = await getToken();
+            const user = jwtDecode(token);
+            const userId = user.id || user._id;
+            const favoritesKey = `favorites_${userId}`;
+            const storedFavorites = await AsyncStorage.getItem(favoritesKey);
+            if (storedFavorites) {
+                setLocalFavorites(JSON.parse(storedFavorites));
+                return JSON.parse(storedFavorites);
+            }
+            return [];
+        } catch (error) {
+            console.error('Error loading local favorites:', error);
+            return [];
+        }
+    };
 
+    // Save local favorites to AsyncStorage
+    const saveLocalFavorites = async (newFavorites) => {
+        try {
+            const token = await getToken();
+            const user = jwtDecode(token);
+            const userId = user.id || user._id;
+            const favoritesKey = `favorites_${userId}`;
+            await AsyncStorage.setItem(favoritesKey, JSON.stringify(newFavorites));
+            setLocalFavorites(newFavorites);
+        } catch (error) {
+            console.error('Error saving local favorites:', error);
+        }
+    };
+
+    // Fetch favorites from both backend and local storage
     const fetchFavourites = async () => {
         setLoading(true);
         try {
             const token = await getToken();
             const user = jwtDecode(token);
-            const res = await getFavourites(user.id);
-            setFavourites(res.data);
-            setFiltered(res.data);
+            
+            // Load local favorites
+            const localFavIds = await loadLocalFavorites();
+            
+            // Try to get favorites from backend first
+            let backendFavorites = [];
+            try {
+                const res = await getFavourites(user.id);
+                backendFavorites = res.data || [];
+            } catch (backendError) {
+                console.log('Backend favorites not available, using local storage');
+            }
+            
+            // If we have local favorites but no backend favorites, fetch videos and filter
+            if (localFavIds.length > 0 && backendFavorites.length === 0) {
+                try {
+                    const filter = { userId: user.id || user._id };
+                    const videosRes = await getVideos(filter);
+                    const allVideos = videosRes.data.list || [];
+                    
+                    // Filter videos that are in local favorites
+                    const localFavoriteVideos = allVideos.filter(video => 
+                        localFavIds.includes(video._id)
+                    ).map(video => ({
+                        ...video,
+                        type: 'video',
+                        coachName: video.coach?.name || 'Unknown',
+                        date: new Date(video.createdAt).toLocaleDateString(),
+                        tags: video.tags || [],
+                        note: video.note || ''
+                    }));
+                    
+                    setFavourites(localFavoriteVideos);
+                    setFiltered(localFavoriteVideos);
+                } catch (videoError) {
+                    console.error('Error fetching videos for local favorites:', videoError);
+                    setFavourites([]);
+                    setFiltered([]);
+                }
+            } else {
+                // Use backend favorites
+                setFavourites(backendFavorites);
+                setFiltered(backendFavorites);
+            }
         } catch (e) {
             console.error('Failed to fetch favourites:', e);
+            setFavourites([]);
+            setFiltered([]);
         } finally {
             setLoading(false);
         }
     };
+
+    // Refresh favorites when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchFavourites();
+        }, [])
+    );
 
     const handleSearch = (text) => {
         setSearchText(text);
@@ -54,20 +137,121 @@ export default function FavouritesPage() {
     };
 
     const handleUnfavourite = async (id) => {
-        await toggleFavourite(id); // toggle favourite in backend
-        fetchFavourites();
+        Alert.alert(
+            "Remove from Favorites",
+            "Are you sure you want to remove this video from your favorites?",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Remove",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            // Try to toggle in backend first
+                            try {
+                                await toggleFavourite(id);
+                            } catch (backendError) {
+                                console.log('Backend toggle failed, updating local storage only');
+                            }
+                            
+                            // Update local favorites
+                            const newLocalFavorites = localFavorites.filter(favId => favId !== id);
+                            await saveLocalFavorites(newLocalFavorites);
+                            
+                            // Update displayed favorites
+                            const newFavorites = favourites.filter(item => item._id !== id);
+                            setFavourites(newFavorites);
+                            setFiltered(newFavorites.filter(item =>
+                                item.title.toLowerCase().includes(searchText.toLowerCase())
+                            ));
+                        } catch (error) {
+                            console.error('Error removing favorite:', error);
+                            Alert.alert("Error", "Failed to remove from favorites. Please try again.");
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const clearAllFavorites = () => {
+        Alert.alert(
+            "Clear All Favorites",
+            "Are you sure you want to remove all videos from your favorites?",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Clear All",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            // Clear local favorites
+                            await saveLocalFavorites([]);
+                            
+                            // Clear displayed favorites
+                            setFavourites([]);
+                            setFiltered([]);
+                        } catch (error) {
+                            console.error('Error clearing favorites:', error);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleVideoPress = (item) => {
+        Alert.alert(
+            "Video Options",
+            "What would you like to do?",
+            [
+                {
+                    text: "Watch Video",
+                    onPress: () => router.push(`/video-review/${item._id}`)
+                },
+                {
+                    text: "Remove from Favorites",
+                    onPress: () => handleUnfavourite(item._id),
+                    style: "destructive"
+                },
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                }
+            ]
+        );
     };
 
     const renderItem = ({ item }) => (
-        <View style={viewType === 'list' ? styles.listCard : styles.card}>
+        <TouchableOpacity 
+            style={viewType === 'list' ? styles.listCard : styles.card}
+            onPress={() => handleVideoPress(item)}
+        >
             {item.type === 'video' ? (
-                <Video
-                    source={{ uri: item.url }}
-                    style={styles.thumbnail}
-                    resizeMode="cover"
-                    isMuted
-                    shouldPlay={false}
-                />
+                <View style={styles.videoContainer}>
+                    <Video
+                        source={{ uri: item.url }}
+                        style={styles.thumbnail}
+                        resizeMode="cover"
+                        isMuted
+                        shouldPlay={false}
+                        {...(item.thumbnailUrl
+                            ? {
+                                usePoster: true,
+                                posterSource: { uri: item.thumbnailUrl }
+                            }
+                            : {})}
+                    />
+                    <View style={styles.favoriteIndicator}>
+                        <Text style={styles.favoriteIcon}>❤️</Text>
+                    </View>
+                </View>
             ) : (
                 <Image source={{ uri: item.url }} style={styles.thumbnail} />
             )}
@@ -81,7 +265,7 @@ export default function FavouritesPage() {
                     <Text style={styles.unfav}>❤️ Remove</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     if (loading) {
@@ -101,7 +285,7 @@ export default function FavouritesPage() {
     return (
         <View style={styles.container}>
             <CustomHeader 
-                title="Your Favourites"
+                title={`Your Favourites (${filtered.length})`}
                 defaultRoute="/student"
             />
             
@@ -119,12 +303,23 @@ export default function FavouritesPage() {
                             value={viewType === 'grid'}
                             onValueChange={() => setViewType(viewType === 'grid' ? 'list' : 'grid')}
                         />
+                        {favourites.length > 0 && (
+                            <TouchableOpacity 
+                                style={styles.clearAllButton}
+                                onPress={clearAllFavorites}
+                            >
+                                <Text style={styles.clearAllText}>Clear All</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
 
                 {filtered.length === 0 ? (
                     <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>You haven't saved any favourites yet!</Text>
+                        <Text style={styles.emptyIcon}>💔</Text>
+                        <Text style={styles.emptyText}>
+                            {searchText ? 'No favorites match your search!' : "You haven't saved any favourites yet!"}
+                        </Text>
                         <TouchableOpacity onPress={() => router.push('/all-videos')}>
                             <Text style={styles.browseBtn}>Browse Videos</Text>
                         </TouchableOpacity>
@@ -136,6 +331,7 @@ export default function FavouritesPage() {
                         keyExtractor={(item) => item._id}
                         contentContainerStyle={styles.flatListContent}
                         showsVerticalScrollIndicator={false}
+                        numColumns={viewType === 'grid' ? 1 : 1}
                     />
                 )}
             </View>
@@ -166,12 +362,25 @@ const styles = StyleSheet.create({
     },
     toggleRow: {
         flexDirection: 'row',
-        alignItems: 'center'
+        alignItems: 'center',
+        justifyContent: 'space-between'
     },
     toggleLabel: {
         marginRight: 8,
         fontSize: 16,
         fontWeight: '500',
+    },
+    clearAllButton: {
+        backgroundColor: '#dc3545',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 6,
+        marginLeft: 8
+    },
+    clearAllText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '500'
     },
     card: {
         backgroundColor: '#fff',
@@ -196,10 +405,27 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
+    videoContainer: {
+        position: 'relative',
+    },
     thumbnail: {
         width: '100%',
         aspectRatio: 16 / 9,
         backgroundColor: '#ddd',
+    },
+    favoriteIndicator: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 15,
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    favoriteIcon: {
+        fontSize: 16,
     },
     infoContainer: {
         padding: 12
@@ -229,6 +455,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 40,
         paddingHorizontal: 20,
+    },
+    emptyIcon: {
+        fontSize: 64,
+        marginBottom: 16
     },
     emptyText: {
         fontSize: 16,

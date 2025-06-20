@@ -1,41 +1,20 @@
 import React, { useEffect, useState } from 'react';
-
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    ActivityIndicator,
-    StyleSheet,
-    useColorScheme,
-    ScrollView,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getVideos } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { Video } from 'expo-av';
-import { LinearGradient } from 'expo-linear-gradient';
-import {
-    useFonts,
-    Poppins_400Regular,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-} from '@expo-google-fonts/poppins';
-import CustomHeader from '../components/CustomHeader';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { toggleFavourite } from '../services/api';
 
 export default function AllVideos() {
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [role, setRole] = useState('student');
+    const [favorites, setFavorites] = useState([]);
     const router = useRouter();
     const params = useLocalSearchParams();
-    const scheme = useColorScheme();
-
-    const [fontsLoaded] = useFonts({
-        Poppins_400Regular,
-        Poppins_600SemiBold,
-        Poppins_700Bold,
-    });
 
     useEffect(() => {
         const getRole = async () => {
@@ -44,21 +23,97 @@ export default function AllVideos() {
             setRole(user.role || 'student');
         };
         getRole();
+        loadFavorites();
     }, []);
+
+    const loadFavorites = async () => {
+        try {
+            const token = await getToken();
+            const user = jwtDecode(token);
+            const userId = user.id || user._id;
+            const favoritesKey = `favorites_${userId}`;
+            const storedFavorites = await AsyncStorage.getItem(favoritesKey);
+            if (storedFavorites) {
+                setFavorites(JSON.parse(storedFavorites));
+            }
+        } catch (error) {
+            console.error('Error loading favorites:', error);
+        }
+    };
+
+    const saveFavorites = async (newFavorites) => {
+        try {
+            const token = await getToken();
+            const user = jwtDecode(token);
+            const userId = user.id || user._id;
+            const favoritesKey = `favorites_${userId}`;
+            await AsyncStorage.setItem(favoritesKey, JSON.stringify(newFavorites));
+            setFavorites(newFavorites);
+        } catch (error) {
+            console.error('Error saving favorites:', error);
+        }
+    };
+
+    const toggleFavorite = async (videoId) => {
+        const isFavorite = favorites.includes(videoId);
+        let newFavorites;
+        
+        if (isFavorite) {
+            newFavorites = favorites.filter(id => id !== videoId);
+        } else {
+            newFavorites = [...favorites, videoId];
+        }
+        
+        // Save to local storage
+        await saveFavorites(newFavorites);
+        
+        // Also try to update backend if available
+        try {
+            await toggleFavourite(videoId);
+        } catch (error) {
+            console.log('Backend favorite toggle failed, using local storage only');
+        }
+    };
+
+    const handleVideoPress = (item) => {
+        Alert.alert(
+            "Video Options",
+            "What would you like to do?",
+            [
+                {
+                    text: "Watch Video",
+                    onPress: () => router.push(`/video-review/${item._id}`)
+                },
+                {
+                    text: favorites.includes(item._id) ? "Remove from Favorites" : "Add to Favorites",
+                    onPress: () => toggleFavorite(item._id)
+                },
+                {
+                    text: "View Favorites",
+                    onPress: () => router.push('/favourites')
+                },
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                }
+            ]
+        );
+    };
 
     useEffect(() => {
         const fetchVideos = async () => {
             setLoading(true);
             try {
+                let filter = {};
                 const token = await getToken();
                 const user = jwtDecode(token);
-                const filter = {
-                    ...(params.studentId && { studentId: params.studentId }),
-                    ...(params.coachId && { coachId: params.coachId }),
-                    userId: user.id || user._id,
-                };
+
+                params.studentId && (filter.studentId = params.studentId);
+                params.coachId && (filter.coachId = params.coachId);
+
+                filter.userId = user.id || user._id;
                 const res = await getVideos(filter);
-                setVideos(res.data.list || []);
+                setVideos(res.data.list);
             } catch (err) {
                 console.error('Failed to fetch videos:', err);
                 setVideos([]);
@@ -69,179 +124,178 @@ export default function AllVideos() {
         fetchVideos();
     }, [params.studentId, params.coachId]);
 
-    const renderItem = (item) => (
-        <TouchableOpacity
-            key={item._id}
-            style={scheme === 'dark' ? styles.cardDark : styles.card}
-            onPress={() => router.push(`/video-review/${item._id}`)}
-            activeOpacity={0.9}
-        >
-            <Video
-                source={{ uri: item.url }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-                isMuted
-                shouldPlay={false}
-                usePoster={!!item.thumbnailUrl}
-                posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
-            />
-            <Text style={scheme === 'dark' ? styles.titleDark : styles.title}>{item.title}</Text>
+    const renderItem = ({ item }) => (
+        <TouchableOpacity style={styles.card} onPress={() => handleVideoPress(item)}>
+            <View style={styles.videoContainer}>
+                <Video
+                    source={{ uri: item.url }}
+                    style={styles.thumbnail}
+                    resizeMode="cover"
+                    isMuted
+                    shouldPlay={false}
+                    {...(item.thumbnailUrl
+                        ? {
+                            usePoster: true,
+                            posterSource: { uri: item.thumbnailUrl }
+                        }
+                        : {})}
+                />
+                {favorites.includes(item._id) && (
+                    <View style={styles.favoriteIndicator}>
+                        <Text style={styles.favoriteIcon}>❤️</Text>
+                    </View>
+                )}
+            </View>
+            <Text style={styles.title}>{item.title}</Text>
         </TouchableOpacity>
     );
 
-    if (!fontsLoaded || loading) {
-        return (
-            <View style={scheme === 'dark' ? styles.centeredDark : styles.centered}>
-                <ActivityIndicator size="large" color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
-            </View>
-        );
-    }
-
     return (
-        <View style={scheme === 'dark' ? styles.containerDark : styles.container}>
-            <CustomHeader 
-                title="Your Videos"
-                onBackPress={() => router.replace(role === 'coach' ? '/coach' : '/student')}
-            />
-
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
+        <View style={styles.container}>
+            <View style={styles.headerContainer}>
                 <TouchableOpacity
-                    onPress={() =>
-                        router.push(
-                            params.studentId
-                                ? `/record-video?studentId=${params.studentId}`
-                                : '/record-video'
-                        )
-                    }
-                    activeOpacity={0.8}
-                    style={styles.newRecordingContainer}
+                    style={styles.backButton}
+                    onPress={() => {
+                        if (role === 'coach') {
+                            router.replace('/coach');
+                        } else {
+                            router.replace('/student');
+                        }
+                    }}
                 >
-                    <LinearGradient
-                        colors={['#8ab4f8', '#1976d2']}
-                        style={styles.newRecording}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                    >
-                        <Text style={styles.recordIcon}>🎥</Text>
-                        <Text style={styles.recordText}>New Recording</Text>
-                    </LinearGradient>
+                    <Text style={styles.backButtonText}>← Back to Profile</Text>
                 </TouchableOpacity>
-
-                <View style={styles.grid}>
-                    {videos.length === 0 ? (
-                        <Text style={scheme === 'dark' ? styles.emptyTextDark : styles.emptyText}>No videos yet.</Text>
-                    ) : (
-                        videos.map(renderItem)
-                    )}
-                </View>
-            </ScrollView>
+                
+                <TouchableOpacity
+                    style={styles.favoritesButton}
+                    onPress={() => router.push('/favourites')}
+                >
+                    <Text style={styles.favoritesButtonText}>❤️ Favorites ({favorites.length})</Text>
+                </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.header}>Videos</Text>
+            
+            <TouchableOpacity style={styles.newRecordingTop} onPress={() => {
+                if (params.studentId) {
+                    router.push(`/record-video?studentId=${params.studentId}`);
+                } else {
+                    router.push('/record-video');
+                }
+            }}>
+                <Text style={styles.newRecordingIcon}>🎥</Text>
+                <Text style={styles.newRecordingText}>New Recording</Text>
+            </TouchableOpacity>
+            
+            <FlatList
+                data={videos}
+                renderItem={renderItem}
+                keyExtractor={item => item._id}
+                numColumns={2}
+                ListEmptyComponent={
+                    loading
+                        ? <Text style={styles.emptyText}>Loading...</Text>
+                        : <Text style={styles.emptyText}>No videos yet.</Text>
+                }
+            />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f4f8fb',
+    container: { 
+        flex: 1, 
+        backgroundColor: '#fff', 
+        paddingVertical: 16, 
+        paddingHorizontal: 16 
     },
-    containerDark: {
-        flex: 1,
-        backgroundColor: '#181c24',
-    },
-    centered: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f4f8fb',
-    },
-    centeredDark: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#181c24',
-    },
-    scrollContent: {
-        paddingHorizontal: 16,
-        paddingTop: 20,
-        paddingBottom: 40,
-    },
-    newRecordingContainer: {
-        marginBottom: 20,
-    },
-    newRecording: {
-        padding: 20,
-        borderRadius: 16,
-        alignItems: 'center',
-    },
-    recordIcon: {
-        fontSize: 36,
-        marginBottom: 8,
-        color: '#fff',
-    },
-    recordText: {
-        fontSize: 16,
-        fontFamily: 'Poppins_600SemiBold',
-        color: '#fff',
-    },
-    grid: {
+    headerContainer: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
         justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16
+    },
+    backButton: {
+        flex: 1
+    },
+    backButtonText: { 
+        fontSize: 18, 
+        color: '#1976d2' 
+    },
+    favoritesButton: {
+        backgroundColor: '#f8f9fa',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#e9ecef'
+    },
+    favoritesButtonText: {
+        fontSize: 14,
+        color: '#495057',
+        fontWeight: '500'
+    },
+    header: { 
+        fontSize: 22, 
+        fontWeight: 'bold', 
+        marginBottom: 16 
     },
     card: {
-        width: '48%',
-        marginBottom: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        overflow: 'hidden',
-        backgroundColor: '#fff',
-        borderColor: '#e0e0e0',
+        flex: 1,
+        margin: 8,
+        alignItems: 'stretch',
+        backgroundColor: '#eee',
+        borderRadius: 8,
+        minWidth: 0,
     },
-    cardDark: {
-        width: '48%',
-        marginBottom: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        overflow: 'hidden',
-        backgroundColor: '#23243a',
-        borderColor: '#333',
+    videoContainer: {
+        position: 'relative',
     },
     thumbnail: {
         width: '100%',
         aspectRatio: 16 / 9,
+        borderRadius: 8,
         backgroundColor: '#ccc',
     },
-    title: {
-        padding: 10,
-        fontSize: 13,
-        fontFamily: 'Poppins_600SemiBold',
-        textAlign: 'center',
-        color: '#222f3e',
+    favoriteIndicator: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 15,
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    titleDark: {
-        padding: 10,
-        fontSize: 13,
-        fontFamily: 'Poppins_600SemiBold',
-        textAlign: 'center',
-        color: '#f5f6fa',
+    favoriteIcon: {
+        fontSize: 16,
+    },
+    title: { 
+        marginTop: 8, 
+        marginBottom: 8,
+        marginHorizontal: 8,
+        fontWeight: 'bold', 
+        textAlign: 'center' 
+    },
+    newRecording: {
+        flex: 1,
+        margin: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: '#1976d2',
+        borderRadius: 8,
+        padding: 16
+    },
+    newRecordingIcon: { 
+        fontSize: 40, 
+        marginBottom: 8 
     },
     emptyText: {
-        fontSize: 16,
         textAlign: 'center',
-        paddingTop: 40,
-        fontFamily: 'Poppins_400Regular',
-        width: '100%',
-        color: '#222f3e',
-    },
-    emptyTextDark: {
+        marginTop: 32,
         fontSize: 16,
-        textAlign: 'center',
-        paddingTop: 40,
-        fontFamily: 'Poppins_400Regular',
-        width: '100%',
-        color: '#f5f6fa',
-    },
+        color: '#666'
+    }
 });
