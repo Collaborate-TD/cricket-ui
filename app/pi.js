@@ -84,7 +84,6 @@ export default function PersonalInfo() {
                     setLastName(res.data.lastName || '');
                     setUserName(res.data.userName || '');
                     setEmail(res.data.email || '');
-                    setUploadedFileName(res.data.profilePhoto || null);
                 }
             } catch (err) {
                 showAlert('Error', 'Failed to fetch user data. Please check your connection.');
