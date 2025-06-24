@@ -40,7 +40,6 @@ export default function CoachList() {
     const refreshCoachLists = async (sid) => {
         try {
             const [coachRes, requestsRes] = await Promise.all([getMatchUsers(sid), getUnmatchUsers(sid)]);
-            console.log('Coaches:', coachRes.data);
             setCoaches(Array.isArray(coachRes.data) ? coachRes.data : []);
             setMyRequests(Array.isArray(requestsRes.data) ? requestsRes.data : []);
         } catch (err) {
@@ -54,7 +53,6 @@ export default function CoachList() {
             const user = jwtDecode(token);
             const sid = user.id || user._id;
             setStudentId(sid);
-            console.log('Student ID:', sid);
             await refreshCoachLists(sid);
         };
         fetchData();
