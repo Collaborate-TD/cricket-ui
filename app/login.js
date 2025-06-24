@@ -8,198 +8,205 @@ import { setToken } from '../utils/tokenStorage';
 import { login } from '../services/api';
 import { showAlert } from '../utils/alertMessage';
 
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validatePassword(password) {
+  return /^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{6,}$/.test(password);
+}
+
 export default function Login() {
-    const router = useRouter();
-    const [userData, setUserData] = useState('');
-    const [password, setPassword] = useState('');
-    const [errors, setErrors] = useState({});
-    const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const [userData, setUserData] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
-    const validate = () => {
-        const newErrors = {};
-        if (!userData.trim()) newErrors.userData = "Username or Email is required";
-        if (!password.trim()) newErrors.password = "Password is required";
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
+  const validate = () => {
+    const newErrors = {};
+    if (!userData.trim()) newErrors.userData = 'Username or Email is required';
+    if (!password.trim()) newErrors.password = 'Password is required';
+    else if (!validatePassword(password))
+      newErrors.password =
+        'Password must be at least 6 characters, include a number and a special character';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    const onLogin = async () => {
-        if (!validate()) return;
+  const onLogin = async () => {
+    if (!validate()) return;
+    try {
+      //console.log('Login attempt:', { userData, password });
+      const res = await login(userData, password);
+      //console.log('Login response:', res.data);
+      await setToken(res.data.token);
+      //console.log('Token saved:', res.data.token);
 
-        try {
-            const res = await login(userData, password);
-            await setToken(res.data.token);
+      if (res.data.user?.role === 'student') {
+        router.replace('/student');
+      } else if (res.data.user?.role === 'coach') {
+        router.replace('/coach');
+      } else {
+        showAlert('Login Failed', 'Unknown role: ' + (res.data.user?.role || 'undefined'));
+      }
+    } catch (err) {
+      //console.error('Login error:', err.message, err.response?.data);
+      showAlert('Login Failed', err.response?.data?.message || 'Server error');
+    }
+  };
 
-            if (res.data.role === 'student') {
-                router.replace('/student');
-            } else if (res.data.role === 'coach') {
-                router.replace('/coach');
-            } else {
-                showAlert('Login Failed', 'Unknown role');
-            }
-        } catch (err) {
-            const message = err.response?.data?.message || 'Server error';
-            showAlert('Login Failed', message);
-        }
-    };
-
-    return (
-        <View style={styles.background}>
-            <View style={styles.formContainer}>
-                <Image
-                    source={require('../assets/logo.png')}
-                    style={styles.logo}
-                    resizeMode="contain"
-                />
-                <Text style={styles.title}>Login</Text>
-
-                <View style={styles.inputWrapper}>
-                    <CustomInput
-                        placeholder="Username or Email"
-                        value={userData}
-                        onChangeText={setUserData}
-                        error={errors.userData}
-                        style={styles.inputBox}
-                        inputStyle={styles.inputText}
-                        placeholderTextColor="#b0b0b0"
-                    />
-                </View>
-                {errors.userData && <Text style={styles.errorText}>{errors.userData}</Text>}
-
-                <View style={styles.inputWrapper}>
-                    <CustomInput
-                        placeholder="Password"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry={!showPassword}
-                        error={errors.password}
-                        style={styles.inputBox}
-                        inputStyle={styles.inputTextWithIcon}
-                        placeholderTextColor="#b0b0b0"
-                    />
-                    <TouchableOpacity
-                        style={styles.showHideBtn}
-                        onPress={() => setShowPassword(!showPassword)}
-                    >
-                        <MaterialCommunityIcons
-                            name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                            size={22}
-                            color="#1976d2"
-                        />
-                    </TouchableOpacity>
-                </View>
-                {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-
-                <CustomButton title="Sign In" onPress={onLogin} style={styles.button} />
-
-                <TouchableOpacity onPress={() => router.replace('/register')} style={styles.link}>
-                    <Text style={styles.linkText}>Create an account? Register</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => router.replace('/forgot-pass')} style={styles.link}>
-                    <Text style={styles.linkText}>Forgot password?</Text>
-                </TouchableOpacity>
-            </View>
+  return (
+    <View style={styles.background}>
+      <View style={styles.formContainer}>
+        <Image
+          source={require('../assets/logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <Text style={styles.title}>Login</Text>
+        <View style={styles.inputWrapper}>
+          <CustomInput
+            placeholder="Username or Email"
+            value={userData}
+            onChangeText={setUserData}
+            style={styles.inputBox}
+            inputStyle={styles.inputText}
+            placeholderTextColor="#b0b0b0"
+          />
         </View>
-    );
+        {errors.userData && <Text style={styles.errorText}>{errors.userData}</Text>}
+        <View style={styles.inputWrapper}>
+          <CustomInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            style={styles.inputBox}
+            inputStyle={styles.inputTextWithIcon}
+            placeholderTextColor="#b0b0b0"
+          />
+          <TouchableOpacity
+            style={styles.showHideBtn}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <MaterialCommunityIcons
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={22}
+              color="#1976d2"
+            />
+          </TouchableOpacity>
+        </View>
+        {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+        <CustomButton title="Sign In" onPress={onLogin} style={styles.button} />
+        <TouchableOpacity onPress={() => router.replace('/register')} style={styles.link}>
+          <Text style={styles.linkText}>Create an account? Register</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.replace('/forgot-pass')} style={styles.link}>
+          <Text style={styles.linkText}>Forgot password?</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-        backgroundColor: '#f4f8fb',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    formContainer: {
-        width: '100%',
-        maxWidth: 400,
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 28,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
-        elevation: 6,
-        alignItems: 'center',
-    },
-    logo: {
-        width: 80,
-        height: 80,
-        marginBottom: 18,
-    },
-    title: {
-        fontSize: 26,
-        fontWeight: 'bold',
-        marginBottom: 22,
-        textAlign: 'center',
-        color: '#1976d2',
-        letterSpacing: 1,
-    },
-    inputWrapper: {
-        width: 320,
-        position: 'relative',
-        alignSelf: 'center',
-        marginBottom: 0,
-    },
-    inputBox: {
-        width: '100%',
-        minHeight: 48,
-        borderWidth: 1.5,
-        borderColor: '#e0e0e0',
-        borderRadius: 8,
-        marginBottom: 12,
-        paddingHorizontal: 14,
-        backgroundColor: '#fafbfc',
-        justifyContent: 'center',
-        alignSelf: 'center',
-    },
-    inputText: {
-        fontSize: 17,
-        color: '#222',
-        paddingVertical: 10,
-    },
-    inputTextWithIcon: {
-        fontSize: 17,
-        color: '#222',
-        paddingVertical: 10,
-        paddingRight: 40,
-    },
-    errorText: {
-        color: 'red',
-        fontSize: 13,
-        marginBottom: 8,
-        alignSelf: 'flex-start',
-        width: 320,
-    },
-    button: {
-        marginTop: 10,
-        width: 320,
-        backgroundColor: '#1976d2',
-        padding: 15,
-        borderRadius: 8,
-        shadowColor: '#1976d2',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 2,
-        alignSelf: 'center',
-    },
-    link: {
-        marginTop: 16,
-    },
-    linkText: {
-        color: '#1976d2',
-        textAlign: 'center',
-        fontWeight: '500',
-        fontSize: 15,
-    },
-    showHideBtn: {
-        position: 'absolute',
-        right: 12,
-        top: '50%',
-        transform: [{ translateY: -20 }],
-        zIndex: 10,
-        padding: 4,
-    },
+  background: {
+    flex: 1,
+    backgroundColor: '#f4f8fb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    marginBottom: 18,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 22,
+    textAlign: 'center',
+    color: '#1976d2',
+    letterSpacing: 1,
+  },
+  inputWrapper: {
+    width: 320,
+    position: 'relative',
+    alignSelf: 'center',
+    marginBottom: 0,
+  },
+  inputBox: {
+    width: '100%',
+    minHeight: 48,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    backgroundColor: '#fafbfc',
+    justifyContent: 'center',
+    alignSelf: 'center',
+  },
+  inputText: {
+    fontSize: 17,
+    color: '#222',
+    paddingVertical: 10,
+  },
+  inputTextWithIcon: {
+    fontSize: 17,
+    color: '#222',
+    paddingVertical: 10,
+    paddingRight: 40,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 13,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+    width: 320,
+  },
+  button: {
+    marginTop: 10,
+    width: 320,
+    backgroundColor: '#1976d2',
+    padding: 15,
+    borderRadius: 8,
+    shadowColor: '#1976d2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+    alignSelf: 'center',
+  },
+  link: {
+    marginTop: 16,
+  },
+  linkText: {
+    color: '#1976d2',
+    textAlign: 'center',
+    fontWeight: '500',
+    fontSize: 15,
+  },
+  showHideBtn: {
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: [{ translateY: -20 }],
+    zIndex: 10,
+    padding: 4,
+  },
 });
