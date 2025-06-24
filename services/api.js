@@ -1,16 +1,15 @@
-// filepath: cricket-ui/src/api.js
 import axios from "axios";
 import { API_URL } from '@env';
+import { Platform } from 'react-native';
+import { getToken } from '../utils/tokenStorage';
 
-
-const API = axios.create({ baseURL: API_URL || 'http://127.0.1:5000' });
+const API = axios.create({ baseURL: API_URL || 'http://127.0.0.1:5000' });
 
 export const register = (data) =>
     API.post("/auth/register", data);
 
 export const login = (email, password) =>
     API.post("/auth/login", { userData: email, password });
-
 export const fetchStudentData = (id) => API.get(`/students/${id}`);
 export const fetchCoachData = (id) => API.get(`/coaches/${id}`);
 export const getUserDetails = (id) => API.get(`/user/${id}`);
@@ -29,13 +28,32 @@ export const getMyCoaches = (studentId) => API.get(`/my-coaches/${studentId}`);
 // export const deleteUser = (id) => API.delete(`/user/delete`, { data: { id } });
 export const forgotPassword = (data) => API.post('/auth/forgot-password', data);
 export const resetPassword = (data) => API.post('/auth/reset-password', data);
-export const getVideos = (filter = {}) => API.post('/video/list', { params: filter }); // Updated to accept a filter object
+export const getVideos = (filter = {}) => API.post('/video/list', { params: filter });
 export const uploadVideo = (formData) =>
-  API.post('/videos/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
+    API.post('/videos/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
 export const uploadAnnotationFeedback = (formData) =>
-  API.post('/videos/feedback', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
+    API.post('/videos/feedback', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+export const uploadGeneralFiles = (formData) =>
+    API.post('/file/general-upload', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+            'Accept': '*/*',
+        },
+    });
+export const uploadProfilePhotoAPI = (formData) =>
+    API.post('/file/general-upload', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+            'Accept': '*/*',
+            'Cache-Control': 'no-cache',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'User-Agent': 'PostmanRuntime/7.41.1',
+        },
+    });
+
 export default API;

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import CustomHeader from '../components/CustomHeader';
 import {
     View,
     Text,
@@ -13,12 +12,13 @@ import {
     LayoutAnimation,
     UIManager,
     useColorScheme,
+    Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
-import { getToken } from '../utils/tokenStorage';
-import { getUserDetails, updateUser } from '../services/api.js';
-import { showAlert } from '../utils/alertMessage.js';
+import { getToken, setToken } from '../utils/tokenStorage';
+import { getUserDetails, updateUser } from '../services/api';
+import { showAlert } from '../utils/alertMessage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -27,62 +27,73 @@ import {
     Poppins_600SemiBold,
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
+import ProfilePhotoUploader from '../components/ProfilePhotoUploader';
+import CustomHeader from '../components/CustomHeader';
+import { uploadProfilePhoto } from '../utils/fileUpload';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function PersonalInfo() {
-    // Enable LayoutAnimation on Android
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-        UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-
     const router = useRouter();
     const scheme = useColorScheme();
-
-    // Load Custom Fonts
     const [fontsLoaded] = useFonts({
         Poppins_400Regular,
         Poppins_600SemiBold,
         Poppins_700Bold,
     });
 
-    // Local State
     const [loading, setLoading] = useState(true);
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [userName, setUserName] = useState('');
     const [email, setEmail] = useState('');
     const [userId, setUserId] = useState('');
+    const [photo, setPhoto] = useState(null);
+    const [photoUri, setPhotoUri] = useState(require('../assets/imgs/default_user.png'));
+    const [uploadedFileName, setUploadedFileName] = useState(null);
     const [editFullName, setEditFullName] = useState(false);
     const [editUserName, setEditUserName] = useState(false);
-
-    // Validation Errors
     const [firstNameError, setFirstNameError] = useState('');
     const [lastNameError, setLastNameError] = useState('');
     const [userNameError, setUserNameError] = useState('');
+    const [uploading, setUploading] = useState(false);
+    const [role, setRole] = useState(''); // Added to determine defaultRoute
 
-    // Fetch User Details on Mount
     useEffect(() => {
-        (async () => {
+        const fetchData = async () => {
             try {
                 const token = await getToken();
-                if (!token) throw new Error('No token found');
+                if (!token) {
+                    showAlert('Error', 'No authentication token found');
+                    return;
+                }
                 const user = jwtDecode(token);
                 const id = user.id || user.userId || user._id;
+                if (!id) {
+                    showAlert('Error', 'Invalid user token');
+                    return;
+                }
                 setUserId(id);
-
+                setRole(user.role || 'student'); // Set role from token
+                setPhotoUri(user.profilePhoto || null);
                 const res = await getUserDetails(id);
-                setFirstName(res.data.firstName || '');
-                setLastName(res.data.lastName || '');
-                setUserName(res.data.userName || '');
-                setEmail(res.data.email || '');
+                if (res && res.data) {
+                    setFirstName(res.data.firstName || '');
+                    setLastName(res.data.lastName || '');
+                    setUserName(res.data.userName || '');
+                    setEmail(res.data.email || '');
+                }
             } catch (err) {
-                showAlert('Error', 'Failed to load user information');
+                showAlert('Error', 'Failed to fetch user data. Please check your connection.');
             } finally {
                 setLoading(false);
             }
-        })();
+        };
+        fetchData();
     }, []);
 
-    // Validate Inputs
     const validate = () => {
         let valid = true;
         if (!firstName.trim()) {
@@ -106,24 +117,69 @@ export default function PersonalInfo() {
         return valid;
     };
 
-    // Save Handler
-    const onSave = async () => {
-        if (!validate()) return;
-        try {
-            await updateUser(userId, { firstName, lastName, userName });
-            showAlert('Success', 'Information updated!');
-            setEditFullName(false);
-            setEditUserName(false);
-        } catch (err) {
-            showAlert('Error', 'Failed to update information');
+    const handlePhotoSelect = async (newPhoto) => {
+        if (newPhoto) {
+            try {
+                setUploading(true);
+                const file = await uploadProfilePhoto(newPhoto);
+                if (file.fileName) {
+                    setPhoto(newPhoto);
+                    setUploadedFileName(file.fileName);
+                    setPhotoUri(file.path);
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                } else {
+                    //console.warn('Photo upload failed - no fileName returned');
+                    showAlert('Error', 'Failed to upload photo. Please try again.');
+                }
+            } catch (error) {
+                //console.error('Photo upload error:', error.message);
+                showAlert('Error', 'Failed to upload photo. Please try again.');
+            } finally {
+                setUploading(false);
+            }
         }
     };
 
-    // Loading State (Fonts OR Data)
+    const onSave = async () => {
+        if (!validate()) return;
+        try {
+            const data = {
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                userName: userName.trim(),
+                profilePhoto: uploadedFileName || "",
+            };
+            // Call updateUser and expect the backend to return the new token
+            const res = await updateUser(userId, data);
+            showAlert('Success', 'Information updated successfully!');
+            setEditFullName(false);
+            setEditUserName(false);
+            setPhoto(null);
+
+            // If backend returns a new token, update it in storage
+            if (res && res.data && res.data.token) {
+                await setToken(res.data.token);
+
+                const user = jwtDecode(res.data.token);
+                setPhotoUri(user.profilePhoto || photoUri);
+            }
+            router.replace('/pi');
+        } catch (err) {
+            showAlert('Error', err.response?.data?.message || 'Failed to update information');
+        }
+    };
+
     if (!fontsLoaded || loading) {
         return (
             <View style={scheme === 'dark' ? styles.centeredDark : styles.centered}>
+                <CustomHeader
+                    title="Personal Information"
+                    defaultRoute={role === 'coach' ? '/coach' : '/student'}
+                />
                 <ActivityIndicator size="large" color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
+                <Text style={scheme === 'dark' ? styles.loadingTextDark : styles.loadingText}>
+                    Loading...
+                </Text>
             </View>
         );
     }
@@ -133,20 +189,23 @@ export default function PersonalInfo() {
             style={scheme === 'dark' ? styles.keyboardAvoidingViewDark : styles.keyboardAvoidingView}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <ScrollView contentContainerStyle={scheme === 'dark' ? styles.wrapperDark : styles.wrapper} keyboardShouldPersistTaps="handled">
-                {/* Custom Header */}
-<CustomHeader 
-    title="Personal Information"
-    defaultRoute="/student"
-/>
-
-                {/* Form Card */}
-                <View style={scheme === 'dark' ? styles.cardDark : styles.card}>
-                    {/* Full Name Field */}
+            <CustomHeader
+                title="Personal Information"
+                defaultRoute={role === 'coach' ? '/coach' : '/student'}
+            />
+            <ScrollView
+                contentContainerStyle={scheme === 'dark' ? styles.wrapperDark : styles.wrapper}
+                keyboardShouldPersistTaps="handled"
+            >
+                <View style={styles.card}>
+                    <ProfilePhotoUploader
+                        photoUri={photoUri}
+                        setPhoto={handlePhotoSelect}
+                        defaultImage={require('../assets/imgs/default_user.png')}
+                        uploading={uploading}
+                    />
                     <View style={styles.fieldContainer}>
-                        <Text style={scheme === 'dark' ? styles.labelDark : styles.label}>
-                            Full Name
-                        </Text>
+                        <Text style={scheme === 'dark' ? styles.labelDark : styles.label}>Full Name</Text>
                         <View
                             style={styles.valueRow}
                             onLayout={() => {
@@ -161,6 +220,7 @@ export default function PersonalInfo() {
                                         onChangeText={setFirstName}
                                         placeholder="First Name"
                                         placeholderTextColor={scheme === 'dark' ? '#888' : '#b0b0b0'}
+                                        autoCapitalize="words"
                                     />
                                     <TextInput
                                         style={scheme === 'dark' ? styles.inputLastNameDark : styles.inputLastName}
@@ -168,33 +228,33 @@ export default function PersonalInfo() {
                                         onChangeText={setLastName}
                                         placeholder="Last Name"
                                         placeholderTextColor={scheme === 'dark' ? '#888' : '#b0b0b0'}
+                                        autoCapitalize="words"
                                     />
                                     <TouchableOpacity
                                         onPress={() => setEditFullName(false)}
                                         style={styles.iconButton}
                                     >
-                                        <Ionicons
-                                            name="checkmark-circle"
-                                            size={30}
-                                            color="#28a745"
-                                        />
+                                        <Ionicons name="checkmark-circle" size={30} color="#28a745" />
                                     </TouchableOpacity>
                                 </>
                             ) : (
                                 <>
                                     <Text style={scheme === 'dark' ? styles.valueTextDark : styles.valueText}>
-                                        {firstName || '—'} {lastName || '—'}
+                                        {firstName && lastName ? `${firstName} ${lastName}` : 'No name set'}
                                     </Text>
                                     <TouchableOpacity
                                         onPress={() => setEditFullName(true)}
                                         style={styles.iconButton}
                                     >
-                                        <Ionicons name="create-outline" size={26} color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
-                                    </TouchableOpacity >
+                                        <Ionicons
+                                            name="create-outline"
+                                            size={26}
+                                            color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'}
+                                        />
+                                    </TouchableOpacity>
                                 </>
-                            )
-                            }
-                        </View >
+                            )}
+                        </View>
                         {!!firstNameError && (
                             <Text style={scheme === 'dark' ? styles.errorTextDark : styles.errorText}>
                                 {firstNameError}
@@ -206,12 +266,8 @@ export default function PersonalInfo() {
                             </Text>
                         )}
                     </View>
-
-                    {/* Username Field */}
                     <View style={styles.fieldContainer}>
-                        <Text style={scheme === 'dark' ? styles.labelDark : styles.label}>
-                            Username
-                        </Text>
+                        <Text style={scheme === 'dark' ? styles.labelDark : styles.label}>Username</Text>
                         <View
                             style={styles.valueRow}
                             onLayout={() => {
@@ -226,79 +282,67 @@ export default function PersonalInfo() {
                                         onChangeText={setUserName}
                                         placeholder="Username"
                                         placeholderTextColor={scheme === 'dark' ? '#888' : '#b0b0b0'}
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
                                     />
                                     <TouchableOpacity
                                         onPress={() => setEditUserName(false)}
                                         style={styles.iconButton}
                                     >
-                                        <Ionicons
-                                            name="checkmark-circle"
-                                            size={30}
-                                            color="#28a745"
-                                        />
+                                        <Ionicons name="checkmark-circle" size={30} color="#28a745" />
                                     </TouchableOpacity>
                                 </>
                             ) : (
                                 <>
                                     <Text style={scheme === 'dark' ? styles.valueTextDark : styles.valueText}>
-                                        {userName || '—'}
+                                        {userName || 'No username set'}
                                     </Text>
                                     <TouchableOpacity
                                         onPress={() => setEditUserName(true)}
                                         style={styles.iconButton}
                                     >
-                                        <Ionicons name="create-outline" size={26} color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
-                                    </TouchableOpacity >
+                                        <Ionicons
+                                            name="create-outline"
+                                            size={26}
+                                            color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'}
+                                        />
+                                    </TouchableOpacity>
                                 </>
-                            )
-                            }
-                        </View >
+                            )}
+                        </View>
                         {!!userNameError && (
                             <Text style={scheme === 'dark' ? styles.errorTextDark : styles.errorText}>
                                 {userNameError}
                             </Text>
                         )}
                     </View>
-
-                    {/* Email Field (Read-Only) */}
                     <View style={styles.fieldContainer}>
-                        <Text style={scheme === 'dark' ? styles.labelDark : styles.label}>
-                            Email
-                        </Text>
+                        <Text style={scheme === 'dark' ? styles.labelDark : styles.label}>Email</Text>
                         <TextInput
                             style={scheme === 'dark' ? styles.inputEmailDark : styles.inputEmail}
                             value={email}
                             editable={false}
-                            placeholder="Email"
+                            placeholder="No email set"
                             placeholderTextColor={scheme === 'dark' ? '#888' : '#b0b0b0'}
                         />
-                    </View >
-
-                    {/* Save Button */}
-                    < LinearGradient
+                    </View>
+                    <LinearGradient
                         colors={scheme === 'dark' ? ['#1976d2', '#3b5998'] : ['#1976d2', '#4c669f']}
                         style={styles.saveButtonGradient}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                     >
-                        <TouchableOpacity
-                            style={styles.saveButton}
-                            onPress={onSave}
-                            activeOpacity={0.85}
-                        >
-                            <Text style={styles.saveButtonText}>
-                                Save Changes
-                            </Text>
+                        <TouchableOpacity style={styles.saveButton} onPress={onSave} activeOpacity={0.85}>
+                            <Text style={styles.saveButtonText}>Save Changes</Text>
                         </TouchableOpacity>
-                    </LinearGradient >
-                </View >
-            </ScrollView >
-        </KeyboardAvoidingView >
+                    </LinearGradient>
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
-    // Light theme styles
     centered: {
         flex: 1,
         backgroundColor: '#f4f8fb',
@@ -317,6 +361,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         marginHorizontal: 16,
         marginTop: 28,
+        marginBottom: 28,
         borderRadius: 18,
         paddingVertical: 28,
         paddingHorizontal: 22,
@@ -401,8 +446,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontFamily: 'Poppins_400Regular',
     },
-
-    // Dark theme styles
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#666',
+        fontFamily: 'Poppins_400Regular',
+    },
     centeredDark: {
         flex: 1,
         backgroundColor: '#181c24',
@@ -421,6 +470,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#23243a',
         marginHorizontal: 16,
         marginTop: 28,
+        marginBottom: 28,
         borderRadius: 18,
         paddingVertical: 28,
         paddingHorizontal: 22,
@@ -505,9 +555,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontFamily: 'Poppins_400Regular',
     },
-
-    // Common styles
-   
+    loadingTextDark: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#888',
+        fontFamily: 'Poppins_400Regular',
+    },
     fieldContainer: {
         marginBottom: 22,
     },

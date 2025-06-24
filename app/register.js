@@ -8,11 +8,13 @@ import {
 } from 'react-native';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import ProfilePhotoUploader from '../components/ProfilePhotoUploader';
 import { useRouter } from 'expo-router';
 import { register } from '../services/api';
 import { showAlert } from '../utils/alertMessage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import logo from '../assets/logo.png'; // Replace with your logo path
+import { uploadProfilePhoto } from '../utils/fileUpload';
 
 function validateEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -30,6 +32,7 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('student');
+    const [photo, setPhoto] = useState(null);
     const [errors, setErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
 
@@ -52,6 +55,11 @@ export default function Register() {
     const onRegister = async () => {
         if (!validate()) return;
         try {
+            let profilePhoto = null;
+            if (photo) {
+                const uploaded = await uploadProfilePhoto(photo);
+                profilePhoto = uploaded ? uploaded.fileName : null;
+            }
             const data = {
                 userName: userId,
                 firstName,
@@ -59,11 +67,13 @@ export default function Register() {
                 email,
                 password,
                 role,
+                profilePhoto,
             };
             await register(data);
             showAlert('Success', 'Registered successfully!');
             router.replace('/login');
         } catch (err) {
+            //console.error('Registration error:', err.message, err.response?.data); // Debug
             showAlert(
                 'Registration Failed',
                 err.response?.data?.message || 'Error registering'
@@ -75,24 +85,36 @@ export default function Register() {
         <View style={styles.background}>
             <View style={styles.card}>
                 <Image source={logo} style={styles.logo} resizeMode="contain" />
-
                 <Text style={styles.title}>Create Account</Text>
-
+                <ProfilePhotoUploader
+                    photoUri={photo?.uri}
+                    setPhoto={setPhoto}
+                    defaultImage={require('../assets/default-user.png')}
+                />
                 <View style={styles.inputWrapper}>
-                    <CustomInput placeholder="User Name" value={userId} onChangeText={setUserId} />
+                    <CustomInput
+                        placeholder="User Name"
+                        value={userId}
+                        onChangeText={setUserId}
+                    />
                     {errors.userName && <Text style={styles.errorText}>{errors.userName}</Text>}
                 </View>
-
                 <View style={styles.inputWrapper}>
-                    <CustomInput placeholder="First Name" value={firstName} onChangeText={setFirstName} />
+                    <CustomInput
+                        placeholder="First Name"
+                        value={firstName}
+                        onChangeText={setFirstName}
+                    />
                     {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
                 </View>
-
                 <View style={styles.inputWrapper}>
-                    <CustomInput placeholder="Last Name" value={lastName} onChangeText={setLastName} />
+                    <CustomInput
+                        placeholder="Last Name"
+                        value={lastName}
+                        onChangeText={setLastName}
+                    />
                     {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
                 </View>
-
                 <View style={styles.inputWrapper}>
                     <CustomInput
                         placeholder="Email"
@@ -102,7 +124,6 @@ export default function Register() {
                     />
                     {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
                 </View>
-
                 <View style={styles.passwordWrapper}>
                     <CustomInput
                         placeholder="Password"
@@ -124,7 +145,6 @@ export default function Register() {
                     </TouchableOpacity>
                     {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
                 </View>
-
                 <View style={styles.roleContainer}>
                     <TouchableOpacity
                         style={role === 'student' ? styles.roleButtonSelected : styles.roleButton}
@@ -147,9 +167,11 @@ export default function Register() {
                         </Text>
                     </TouchableOpacity>
                 </View>
-
-                <CustomButton title="Create Account" onPress={onRegister} style={styles.button} />
-
+                <CustomButton
+                    title="Create Account"
+                    onPress={onRegister}
+                    style={styles.button}
+                />
                 <TouchableOpacity onPress={() => router.replace('/login')} style={styles.link}>
                     <Text style={styles.linkText}>Already have an account? Login</Text>
                 </TouchableOpacity>

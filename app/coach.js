@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
 import { getToken, removeToken } from '../utils/tokenStorage';
+import { getUserDetails } from '../services/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
     useFonts,
@@ -20,12 +21,9 @@ import {
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 
-import defaultUser from '../assets/imgs/default_user.png';
-
 export default function Coach() {
     const router = useRouter();
     const scheme = useColorScheme();
-
     const [fontsLoaded] = useFonts({
         Poppins_400Regular,
         Poppins_600SemiBold,
@@ -33,52 +31,32 @@ export default function Coach() {
     });
 
     const [firstName, setFirstName] = useState('');
+    const [profilePhoto, setProfilePhoto] = useState('');
+    const [userId, setUserId] = useState(null);
     const [loading, setLoading] = useState(true);
-
-    const colors =
-        scheme === 'dark'
-            ? {
-                background: '#181c24',
-                headerGradient: ['#23243a', '#1a1c3e'],
-                textPrimary: '#f5f6fa',
-                textSecondary: '#aaaaaa',
-                cardBackground: '#23243a',
-                avatarBackground: '#2c2c2c',
-                emojiColor: '#8ab4f8',
-                chevronColor: '#888',
-                shadow: 'rgba(0, 0, 0, 0.7)',
-                signOutColor: '#fff',
-                divider: '#2e3350',
-            }
-            : {
-                background: '#f4f8fb',
-                headerGradient: ['#6dd5ed', '#2193b0', '#4c669f'],
-                textPrimary: '#222f3e',
-                textSecondary: '#7f8c8d',
-                cardBackground: '#fff',
-                avatarBackground: '#e3eafc',
-                emojiColor: '#1976d2',
-                chevronColor: '#b0b0b0',
-                shadow: 'rgba(25, 118, 210, 0.08)',
-                signOutColor: '#fff',
-                divider: '#e6e6e6',
-            };
+    const defaultProfilePhoto = require('../assets/imgs/default_user.png');
 
     useEffect(() => {
-        const fetchName = async () => {
+        const fetchUser = async () => {
             try {
                 const token = await getToken();
                 if (token) {
                     const user = jwtDecode(token);
-                    setFirstName(user.firstName || '');
+                    setFirstName(user.firstName || 'Coach');
+                    setUserId(user.id || user.userId || user._id);
+                    const res = await getUserDetails(user.id || user.userId || user._id);
+
+                    if (user.profilePhoto) {
+                        setProfilePhoto(user.profilePhoto);
+                    }
                 }
-            } catch (error) {
-                console.error('Token decode error:', error);
+            } catch (err) {
+                //console.error('Failed to fetch user:', err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchName();
+        fetchUser();
     }, []);
 
     const handleSignOut = async () => {
@@ -88,44 +66,50 @@ export default function Coach() {
 
     const MenuItem = ({ icon, label, onPress }) => (
         <TouchableOpacity
-            style={styles.menuItem}
+            style={scheme === 'dark' ? styles.menuItemDark : styles.menuItem}
             onPress={onPress}
             activeOpacity={0.8}
         >
-            <View style={styles.menuIconCircle}>
-                <Text style={styles.menuIcon}>{icon}</Text>
+            <View style={scheme === 'dark' ? styles.menuIconCircleDark : styles.menuIconCircle}>
+                <Text style={scheme === 'dark' ? styles.menuIconDark : styles.menuIcon}>{icon}</Text>
             </View>
-            <Text style={styles.menuLabel}>{label}</Text>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={scheme === 'dark' ? styles.menuLabelDark : styles.menuLabel}>{label}</Text>
+            <Text style={scheme === 'dark' ? styles.chevronDark : styles.chevron}>›</Text>
         </TouchableOpacity>
     );
 
     if (!fontsLoaded || loading) {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color={colors.emojiColor} />
+            <View style={scheme === 'dark' ? styles.centeredDark : styles.centered}>
+                <ActivityIndicator size="large" color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <LinearGradient colors={colors.headerGradient} style={styles.header}>
+        <View style={scheme === 'dark' ? styles.containerDark : styles.container}>
+            <LinearGradient
+                colors={scheme === 'dark' ? ['#23243a', '#1a1c3e'] : ['#6dd5ed', '#2193b0', '#4c669f']}
+                style={styles.header}
+            >
                 <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
                     <Text style={styles.signOutText}>Sign-out</Text>
                 </TouchableOpacity>
-
                 <View style={styles.profileContainer}>
-                    <LinearGradient colors={styles.avatarGradientColors} style={styles.avatarGradient}>
-                        <Image source={defaultUser} style={styles.avatar} resizeMode="cover" />
+                    <LinearGradient
+                        colors={['#8ab4f8', '#1976d2', '#192f6a']}
+                        style={styles.avatarGradient}
+                    >
+                        <Image
+                            source={profilePhoto ? { uri: profilePhoto } : defaultProfilePhoto}
+                            style={styles.avatar}
+                            resizeMode="cover"
+                        />
                     </LinearGradient>
-                    <Text style={styles.name}>
-                        {firstName || 'Coach'}
-                    </Text>
+                    <Text style={styles.name}>{firstName}</Text>
                     <Text style={styles.role}>Coach</Text>
                 </View>
             </LinearGradient>
-
             <ScrollView contentContainerStyle={styles.menuContainer}>
                 <View style={styles.menu}>
                     <MenuItem
@@ -134,7 +118,7 @@ export default function Coach() {
                         onPress={() => router.push('/pi')}
                     />
                     <MenuItem
-                        icon="🏏"
+                        icon="🎓"
                         label="Students"
                         onPress={() => router.push('/student-list')}
                     />
@@ -165,6 +149,7 @@ export default function Coach() {
 }
 
 const styles = StyleSheet.create({
+    // Light theme styles
     container: {
         flex: 1,
         backgroundColor: '#f4f8fb',
@@ -219,7 +204,6 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 6,
     },
-    avatarGradientColors: ['#8ab4f8', '#1976d2', '#192f6a'],
     avatar: {
         width: 100,
         height: 100,
@@ -296,5 +280,55 @@ const styles = StyleSheet.create({
     },
     menu: {
         flex: 1,
+    },
+    // Dark theme styles
+    containerDark: {
+        flex: 1,
+        backgroundColor: '#181c24',
+    },
+    centeredDark: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#181c24',
+    },
+    menuItemDark: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 16,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
+        marginVertical: 6,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.13,
+        shadowRadius: 6,
+        elevation: 3,
+        backgroundColor: '#23243a',
+        shadowColor: 'rgba(0, 0, 0, 0.7)',
+    },
+    menuIconCircleDark: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+        backgroundColor: '#2c2c2c',
+    },
+    menuIconDark: {
+        fontSize: 28,
+        textAlign: 'center',
+        color: '#8ab4f8',
+    },
+    menuLabelDark: {
+        fontSize: 18,
+        flex: 1,
+        fontFamily: 'Poppins_600SemiBold',
+        color: '#f5f6fa',
+    },
+    chevronDark: {
+        fontSize: 20,
+        marginLeft: 8,
+        color: '#888',
     },
 });

@@ -30,9 +30,9 @@ export default function Login() {
             const res = await login(userData, password);
             await setToken(res.data.token);
 
-            if (res.data.role === 'student') {
+            if (res.data.user?.role === 'student') {
                 router.replace('/student');
-            } else if (res.data.role === 'coach') {
+            } else if (res.data.user?.role === 'coach') {
                 router.replace('/coach');
             } else {
                 showAlert('Login Failed', 'Unknown role');

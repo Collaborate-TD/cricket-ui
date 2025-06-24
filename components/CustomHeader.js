@@ -14,12 +14,13 @@ import {
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 
-const CustomHeader = ({ 
-    title, 
-    onBackPress, 
+const CustomHeader = ({
+    title,
+    onBackPress,
     showBackButton = true,
     gradientColors,
-    defaultRoute = '/student' 
+    defaultRoute = '/student',
+    children
 }) => {
     const router = useRouter();
     const scheme = useColorScheme();
@@ -38,7 +39,7 @@ const CustomHeader = ({
     };
 
     // Default gradient colors based on theme
-    const defaultGradientColors = gradientColors || 
+    const defaultGradientColors = gradientColors ||
         (scheme === 'dark' ? ['#23243a', '#1a1c3e'] : ['#6dd5ed', '#2193b0', '#4c669f']);
 
     if (!fontsLoaded) {
@@ -50,17 +51,20 @@ const CustomHeader = ({
             colors={defaultGradientColors}
             style={styles.header}
         >
-            {showBackButton && (
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={handleBackPress}
-                >
-                    <Ionicons name="arrow-back" size={28} color="#fff" />
-                </TouchableOpacity>
-            )}
-            <Text style={styles.headerTitle}>
-                {title}
-            </Text>
+            <View style={styles.headerContent}>
+                {showBackButton && (
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={handleBackPress}
+                    >
+                        <Ionicons name="arrow-back" size={28} color="#fff" />
+                    </TouchableOpacity>
+                )}
+                <Text style={styles.headerTitle}>
+                    {title}
+                </Text>
+            </View>
+            {children}
         </LinearGradient>
     );
 };
@@ -77,6 +81,11 @@ const styles = StyleSheet.create({
         elevation: 8,
         shadowOpacity: 0.18,
         shadowRadius: 10,
+    },
+    headerContent: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center'
     },
     backButton: {
         marginRight: 16,

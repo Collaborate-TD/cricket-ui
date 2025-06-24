@@ -12,39 +12,54 @@ import {
 import { useRouter } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
 import { getToken, removeToken } from '../utils/tokenStorage';
+import { getUserDetails } from '../services/api';
 import { LinearGradient } from 'expo-linear-gradient';
-
 import {
     useFonts,
     Poppins_400Regular,
     Poppins_600SemiBold,
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
-
 import defaultUser from '../assets/imgs/default_user.png';
 
 export default function Student() {
     const router = useRouter();
     const scheme = useColorScheme();
     const [firstName, setFirstName] = useState('');
+    const [profilePhoto, setProfilePhoto] = useState('');
     const [loading, setLoading] = useState(true);
-
     const [fontsLoaded] = useFonts({
         Poppins_400Regular,
         Poppins_600SemiBold,
         Poppins_700Bold,
     });
+    const defaultProfilePhoto = require('../assets/imgs/default_user.png');
+
 
     useEffect(() => {
-        const fetchName = async () => {
-            const token = await getToken();
-            if (token) {
-                const user = jwtDecode(token);
-                setFirstName(user.firstName || 'Student');
+        const fetchUser = async () => {
+            try {
+                const token = await getToken();
+                if (!token) {
+                    showAlert('Error', 'No authentication token found. Please log in again.');
+                    router.replace('/login');
+                    return;
+                }
+                const decoded = jwtDecode(token);
+                const userId = decoded.id || decoded._id;
+                setFirstName(decoded.firstName || 'Student');
+
+                const res = await getUserDetails(userId);
+                if (decoded.profilePhoto) {
+                    setProfilePhoto(decoded.profilePhoto);
+                }
+            } catch (err) {
+                //console.error('Failed to fetch user:', err.message);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
-        fetchName();
+        fetchUser();
     }, []);
 
     const handleSignOut = async () => {
@@ -83,19 +98,21 @@ export default function Student() {
                 <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
                     <Text style={styles.signOutText}>Sign-out</Text>
                 </TouchableOpacity>
-
                 <View style={styles.profileContainer}>
                     <LinearGradient
                         colors={['#8ab4f8', '#1976d2', '#192f6a']}
                         style={styles.avatarGradient}
                     >
-                        <Image source={defaultUser} style={styles.avatar} resizeMode="cover" />
+                        <Image
+                            source={profilePhoto ? { uri: profilePhoto } : defaultProfilePhoto}
+                            style={styles.avatar}
+                            resizeMode="cover"
+                        />
                     </LinearGradient>
                     <Text style={styles.name}>{firstName}</Text>
                     <Text style={styles.role}>Student</Text>
                 </View>
             </LinearGradient>
-
             <ScrollView contentContainerStyle={styles.menuWrapper}>
                 <View style={styles.menu}>
                     <MenuItem
@@ -129,13 +146,12 @@ export default function Student() {
                         onPress={() => router.push('/settings')}
                     />
                 </View>
-            </ScrollView >
-        </View >
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    // Light theme styles
     container: {
         flex: 1,
         backgroundColor: '#f4f8fb',
@@ -184,8 +200,6 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         color: '#b0b0b0',
     },
-
-    // Dark theme styles
     containerDark: {
         flex: 1,
         backgroundColor: '#181c24',
@@ -234,8 +248,6 @@ const styles = StyleSheet.create({
         marginLeft: 8,
         color: '#888',
     },
-
-    // Common styles
     header: {
         height: 280,
         borderBottomLeftRadius: 28,

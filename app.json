@@ -24,6 +24,7 @@
       "package": "com.anonymous.cricketui",
       "permissions": [
         "CAMERA",
+        "MEDIA_LIBRARY",
         "RECORD_AUDIO",
         "READ_MEDIA_VIDEO",
         "READ_MEDIA_IMAGES"
