@@ -14,7 +14,7 @@ import { register } from '../services/api';
 import { showAlert } from '../utils/alertMessage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import logo from '../assets/logo.png'; // Replace with your logo path
-import { uploadFile } from '../utils/fileUpload';
+import { uploadProfilePhoto } from '../utils/fileUpload';
 
 function validateEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -57,8 +57,8 @@ export default function Register() {
         try {
             let profilePhoto = null;
             if (photo) {
-                const uploaded = await uploadFile(photo);
-                profilePhoto = uploaded ? uploaded.path.replace(/\\/g, '/') : null;
+                const uploaded = await uploadProfilePhoto(photo);
+                profilePhoto = uploaded ? uploaded.fileName : null;
             }
             const data = {
                 userName: userId,
@@ -67,7 +67,7 @@ export default function Register() {
                 email,
                 password,
                 role,
-                profilePhoto, // use backend link if available
+                profilePhoto,
             };
             await register(data);
             showAlert('Success', 'Registered successfully!');
