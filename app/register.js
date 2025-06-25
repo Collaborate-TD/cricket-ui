@@ -84,7 +84,7 @@ export default function Register() {
     return (
         <View style={styles.background}>
             <View style={styles.card}>
-                <Image source={logo} style={styles.logo} resizeMode="contain" />
+                {/* <Image source={logo} style={styles.logo} resizeMode="contain" /> */}
                 <Text style={styles.title}>Create Account</Text>
                 <ProfilePhotoUploader
                     photoUri={photo?.uri}
