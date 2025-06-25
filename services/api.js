@@ -1,7 +1,5 @@
 import axios from "axios";
 import { API_URL } from '@env';
-import { Platform } from 'react-native';
-import { getToken } from '../utils/tokenStorage';
 
 const API = axios.create({ baseURL: API_URL || 'http://127.0.0.1:5000' });
 
@@ -29,8 +27,8 @@ export const getMyCoaches = (studentId) => API.get(`/my-coaches/${studentId}`);
 export const forgotPassword = (data) => API.post('/auth/forgot-password', data);
 export const resetPassword = (data) => API.post('/auth/reset-password', data);
 export const getVideos = (filter = {}) => API.post('/video/list', { params: filter });
-export const uploadVideo = (formData) =>
-    API.post('/videos/upload', formData, {
+export const uploadCaptureVideo = (formData) =>
+    API.post('/video/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
 export const uploadAnnotationFeedback = (formData) =>
@@ -55,5 +53,8 @@ export const uploadProfilePhotoAPI = (formData) =>
             'User-Agent': 'PostmanRuntime/7.41.1',
         },
     });
+export const toggleFavourite = (videoId, isFavourite) => {
+    return API.put(`/video/${videoId}`, { isFavourite });
+};
 
 export default API;

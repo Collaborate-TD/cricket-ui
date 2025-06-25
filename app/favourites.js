@@ -1,252 +1,239 @@
-// FavouritePage.js
 import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
-    StyleSheet,
-    FlatList,
     TouchableOpacity,
-    TextInput,
-    Switch,
     ActivityIndicator,
-    Image,
+    StyleSheet,
+    useColorScheme,
+    ScrollView,
 } from 'react-native';
-import { Video } from 'expo-av';
 import { useRouter } from 'expo-router';
-import { getFavourites, toggleFavourite } from '../services/api';
+import { getVideos, toggleFavourite } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
-import CustomHeader from '../components/CustomHeader'; // Import CustomHeader
+import { Video } from 'expo-av';
+import {
+    useFonts,
+    Poppins_400Regular,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
+import CustomHeader from '../components/CustomHeader';
 
-export default function FavouritesPage() {
-    const [favourites, setFavourites] = useState([]);
-    const [filtered, setFiltered] = useState([]);
-    const [searchText, setSearchText] = useState('');
-    const [viewType, setViewType] = useState('grid');
+export default function Favourites() {
+    const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+    const scheme = useColorScheme();
+    const [role, setRole] = useState('student');
+
+    const [fontsLoaded] = useFonts({
+        Poppins_400Regular,
+        Poppins_600SemiBold,
+        Poppins_700Bold,
+    });
 
     useEffect(() => {
+        const fetchFavourites = async () => {
+            setLoading(true);
+            try {
+                const token = await getToken();
+                const user = jwtDecode(token);
+                setRole(user.role);
+
+                // Assuming your API can filter by isFavourite true
+                const filter = {
+                    userId: user.id || user._id,
+                    isFavourite: true,
+                };
+                const res = await getVideos(filter);
+                const fetchedVideos = res.data.list || [];
+                setVideos(fetchedVideos.filter(v => v.isFavourite));
+            } catch (err) {
+                console.error('Failed to fetch favorite videos:', err);
+                setVideos([]);
+            } finally {
+                setLoading(false);
+            }
+        };
         fetchFavourites();
     }, []);
 
-    const fetchFavourites = async () => {
-        setLoading(true);
+    // Toggle favorite (unfavorite) — remove from local list after success
+    const toggleFavorite = async (videoId) => {
         try {
-            const token = await getToken();
-            const user = jwtDecode(token);
-            const res = await getFavourites(user.id);
-            setFavourites(res.data);
-            setFiltered(res.data);
-        } catch (e) {
-            console.error('Failed to fetch favourites:', e);
-        } finally {
-            setLoading(false);
+            await toggleFavourite(videoId, false); // unfavorite on backend
+
+            // Remove video from local list to update UI immediately
+            setVideos((prev) => prev.filter((video) => video._id !== videoId));
+        } catch (err) {
+            console.error('Failed to unfavorite:', err);
         }
     };
 
-    const handleSearch = (text) => {
-        setSearchText(text);
-        const filteredData = favourites.filter(item =>
-            item.title.toLowerCase().includes(text.toLowerCase())
-        );
-        setFiltered(filteredData);
-    };
-
-    const handleUnfavourite = async (id) => {
-        await toggleFavourite(id); // toggle favourite in backend
-        fetchFavourites();
-    };
-
-    const renderItem = ({ item }) => (
-        <View style={viewType === 'list' ? styles.listCard : styles.card}>
-            {item.type === 'video' ? (
-                <Video
-                    source={{ uri: item.url }}
-                    style={styles.thumbnail}
-                    resizeMode="cover"
-                    isMuted
-                    shouldPlay={false}
-                />
-            ) : (
-                <Image source={{ uri: item.url }} style={styles.thumbnail} />
-            )}
-            <View style={styles.infoContainer}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.meta}>Coach: {item.coachName}</Text>
-                <Text style={styles.meta}>Date: {item.date}</Text>
-                <Text style={styles.meta}>Tags: {item.tags?.join(', ') || 'None'}</Text>
-                <Text style={styles.notes}>Note: {item.note || 'No notes added'}</Text>
-                <TouchableOpacity onPress={() => handleUnfavourite(item._id)}>
-                    <Text style={styles.unfav}>❤️ Remove</Text>
+    const renderItem = (item) => (
+        <TouchableOpacity
+            key={item._id}
+            style={scheme === 'dark' ? styles.cardDark : styles.card}
+            onPress={() => router.push(`/video-review/${item._id}`)}
+            activeOpacity={0.9}
+        >
+            <Video
+                source={{ uri: item.url }}
+                style={styles.thumbnail}
+                resizeMode="cover"
+                isMuted
+                shouldPlay={false}
+                usePoster={!!item.thumbnailUrl}
+                posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
+            />
+            <View style={styles.titleContainer}>
+                <TouchableOpacity
+                    style={styles.heartIcon}
+                    onPress={() => toggleFavorite(item._id)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                    <Text style={styles.heartText}>{item.isFavourite ? '❤️' : '🤍'}</Text>
                 </TouchableOpacity>
+                <Text style={scheme === 'dark' ? styles.titleDark : styles.title}>{item.title}</Text>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
-    if (loading) {
+    if (!fontsLoaded || loading) {
         return (
-            <View style={styles.container}>
-                <CustomHeader 
-                    title="Your Favourites"
-                    defaultRoute="/student"
-                />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#1976d2" />
-                </View>
+            <View style={scheme === 'dark' ? styles.centeredDark : styles.centered}>
+                <ActivityIndicator size="large" color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <CustomHeader 
+        <View style={scheme === 'dark' ? styles.containerDark : styles.container}>
+            <CustomHeader
                 title="Your Favourites"
-                defaultRoute="/student"
+                onBackPress={() => router.replace(role === 'coach' ? '/coach' : '/student')}
             />
-            
-            <View style={styles.content}>
-                <View style={styles.controls}>
-                    <TextInput
-                        value={searchText}
-                        onChangeText={handleSearch}
-                        placeholder="Search by title..."
-                        style={styles.search}
-                    />
-                    <View style={styles.toggleRow}>
-                        <Text style={styles.toggleLabel}>Grid View</Text>
-                        <Switch
-                            value={viewType === 'grid'}
-                            onValueChange={() => setViewType(viewType === 'grid' ? 'list' : 'grid')}
-                        />
-                    </View>
-                </View>
 
-                {filtered.length === 0 ? (
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>You haven't saved any favourites yet!</Text>
-                        <TouchableOpacity onPress={() => router.push('/all-videos')}>
-                            <Text style={styles.browseBtn}>Browse Videos</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    <FlatList
-                        data={filtered}
-                        renderItem={renderItem}
-                        keyExtractor={(item) => item._id}
-                        contentContainerStyle={styles.flatListContent}
-                        showsVerticalScrollIndicator={false}
-                    />
-                )}
-            </View>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.grid}>
+                    {videos.length === 0 ? (
+                        <Text style={scheme === 'dark' ? styles.emptyTextDark : styles.emptyText}>
+                            No favorite videos yet.
+                        </Text>
+                    ) : (
+                        videos.map(renderItem)
+                    )}
+                </View>
+            </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    // Same styles as AllVideos page:
     container: {
         flex: 1,
-        backgroundColor: '#f4f8fb'
+        backgroundColor: '#f4f8fb',
     },
-    content: {
+    containerDark: {
         flex: 1,
-        padding: 16,
+        backgroundColor: '#181c24',
     },
-    controls: {
-        marginBottom: 16
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f4f8fb',
     },
-    search: {
-        padding: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        backgroundColor: '#fff',
-        marginBottom: 12,
-        fontSize: 16,
+    centeredDark: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#181c24',
     },
-    toggleRow: {
+    scrollContent: {
+        paddingHorizontal: 16,
+        paddingTop: 20,
+        paddingBottom: 40,
+    },
+    grid: {
         flexDirection: 'row',
-        alignItems: 'center'
-    },
-    toggleLabel: {
-        marginRight: 8,
-        fontSize: 16,
-        fontWeight: '500',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
     },
     card: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
+        width: '48%',
         marginBottom: 16,
+        borderRadius: 12,
+        borderWidth: 1,
         overflow: 'hidden',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        backgroundColor: '#fff',
+        borderColor: '#e0e0e0',
     },
-    listCard: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
+    cardDark: {
+        width: '48%',
         marginBottom: 16,
+        borderRadius: 12,
+        borderWidth: 1,
         overflow: 'hidden',
-        elevation: 2,
-        flexDirection: 'row',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        backgroundColor: '#23243a',
+        borderColor: '#333',
     },
     thumbnail: {
         width: '100%',
         aspectRatio: 16 / 9,
-        backgroundColor: '#ddd',
+        borderRadius: 8,
+        backgroundColor: '#ccc',
     },
-    infoContainer: {
-        padding: 12
+    titleContainer: {
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingTop: 32,
+        position: 'relative',
+    },
+    heartIcon: {
+        position: 'absolute',
+        right: 8,
+        top: 4,
+        padding: 4,
+        zIndex: 1,
+    },
+    heartText: {
+        fontSize: 20,
     },
     title: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 4,
-        color: '#333',
-    },
-    meta: {
-        fontSize: 12,
-        color: '#777',
-        marginBottom: 2,
-    },
-    notes: {
+        padding: 10,
         fontSize: 13,
-        marginVertical: 4,
-        color: '#555',
+        fontFamily: 'Poppins_600SemiBold',
+        textAlign: 'center',
+        color: '#222f3e',
     },
-    unfav: {
-        color: '#d32f2f',
-        marginTop: 8,
-        fontWeight: '500',
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        marginTop: 40,
-        paddingHorizontal: 20,
+    titleDark: {
+        padding: 10,
+        fontSize: 13,
+        fontFamily: 'Poppins_600SemiBold',
+        textAlign: 'center',
+        color: '#f5f6fa',
     },
     emptyText: {
         fontSize: 16,
-        color: '#555',
-        marginBottom: 16,
         textAlign: 'center',
+        paddingTop: 40,
+        fontFamily: 'Poppins_400Regular',
+        width: '100%',
+        color: '#222f3e',
     },
-    browseBtn: {
+    emptyTextDark: {
         fontSize: 16,
-        color: '#1976d2',
-        fontWeight: '600',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    flatListContent: {
-        paddingBottom: 32
+        textAlign: 'center',
+        paddingTop: 40,
+        fontFamily: 'Poppins_400Regular',
+        width: '100%',
+        color: '#f5f6fa',
     },
 });
