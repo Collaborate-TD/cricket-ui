@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-
 import {
     View,
     Text,
@@ -10,7 +9,7 @@ import {
     ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getVideos } from '../services/api';
+import { getVideos, toggleFavourite } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { Video } from 'expo-av';
@@ -46,6 +45,36 @@ export default function AllVideos() {
         getRole();
     }, []);
 
+    const toggleFavorite = async (videoId) => {
+        const currentVideo = videos.find(v => v._id === videoId);
+        if (!currentVideo) return;
+
+        const newValue = !currentVideo.isFavourite;
+
+        try {
+            setVideos(prev =>
+                prev.map(video =>
+                    video._id === videoId ? { ...video, isFavourite: newValue } : video
+                )
+            );
+
+            await toggleFavourite(videoId, newValue);
+        } catch (err) {
+            console.error(err);
+            // Optional: revert UI
+            setVideos(prev =>
+                prev.map(video =>
+                    video._id === videoId ? { ...video, isFavourite: !newValue } : video
+                )
+            );
+        }
+    };
+
+
+    const handleVideoPress = (item) => {
+        router.push(`/video-review/${item._id}`);
+    };
+
     useEffect(() => {
         const fetchVideos = async () => {
             setLoading(true);
@@ -69,6 +98,9 @@ export default function AllVideos() {
         fetchVideos();
     }, [params.studentId, params.coachId]);
 
+    // Calculate favorites count from videos array
+    const favoritesCount = videos.filter(video => video.isFavourite).length;
+
     const renderItem = (item) => (
         <TouchableOpacity
             key={item._id}
@@ -76,16 +108,29 @@ export default function AllVideos() {
             onPress={() => router.push(`/video-review/${item._id}`)}
             activeOpacity={0.9}
         >
-            <Video
-                source={{ uri: item.url }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-                isMuted
-                shouldPlay={false}
-                usePoster={!!item.thumbnailUrl}
-                posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
-            />
-            <Text style={scheme === 'dark' ? styles.titleDark : styles.title}>{item.title}</Text>
+            <View style={{ position: 'relative' }}>
+                <Video
+                    source={{ uri: item.url }}
+                    style={styles.thumbnail}
+                    resizeMode="cover"
+                    isMuted
+                    shouldPlay={false}
+                    usePoster={!!item.thumbnailUrl}
+                    posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
+                />
+                <TouchableOpacity
+                    style={styles.heartIcon}
+                    onPress={() => toggleFavorite(item._id)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                    <Text style={styles.heartText}>
+                        {item.isFavourite ? '❤️' : '🤍'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+            <View style={styles.titleContainer}>
+                <Text style={scheme === 'dark' ? styles.titleDark : styles.title}>{item.title}</Text>
+            </View>
         </TouchableOpacity>
     );
 
@@ -99,10 +144,18 @@ export default function AllVideos() {
 
     return (
         <View style={scheme === 'dark' ? styles.containerDark : styles.container}>
-            <CustomHeader 
+            <CustomHeader
                 title="Your Videos"
                 onBackPress={() => router.replace(role === 'coach' ? '/coach' : '/student')}
             />
+
+            <TouchableOpacity
+                style={styles.favoritesButton}
+                onPress={() => router.push('/favourites')}
+                activeOpacity={0.8}
+            >
+                <Text style={styles.favoritesButtonText}>❤️ {favoritesCount}</Text>
+            </TouchableOpacity>
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -186,6 +239,28 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins_600SemiBold',
         color: '#fff',
     },
+    favoritesButton: {
+        position: 'absolute',
+        top: 20,
+        right: 16,
+        backgroundColor: '#ff6b6b',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    favoritesButtonText: {
+        color: '#fff',
+        fontSize: 13,
+        fontFamily: 'Poppins_600SemiBold',
+    },
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -212,7 +287,34 @@ const styles = StyleSheet.create({
     thumbnail: {
         width: '100%',
         aspectRatio: 16 / 9,
+        borderRadius: 8,
         backgroundColor: '#ccc',
+    },
+    titleContainer: {
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingTop: 0,
+        position: 'relative',
+    },
+    heartIcon: {
+        position: 'absolute',
+        right: 5,
+        top: 4,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    heartText: {
+        fontSize: 20,
     },
     title: {
         padding: 10,

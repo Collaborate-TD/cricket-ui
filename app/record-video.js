@@ -12,6 +12,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
+import { uploadCaptureVideo } from '../services/api';
 
 export default function RecordVideoScreen() {
     const cameraRef = useRef(null);
@@ -52,17 +53,8 @@ export default function RecordVideoScreen() {
             if (params.studentId) formData.append('studentId', params.studentId);
 
 
-            const response = await fetch(`${process.env.API_URL}/file/upload`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-                body: formData,
-            });
-
-            const resText = await response.text();
-
-            if (!response.ok) {
+            const response = await uploadCaptureVideo(formData);
+            if (response.status !== 201) {
                 throw new Error(`Upload failed with status ${response.status}`);
             }
 
