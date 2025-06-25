@@ -108,16 +108,16 @@ export default function AllVideos() {
             onPress={() => router.push(`/video-review/${item._id}`)}
             activeOpacity={0.9}
         >
-            <Video
-                source={{ uri: item.url }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-                isMuted
-                shouldPlay={false}
-                usePoster={!!item.thumbnailUrl}
-                posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
-            />
-            <View style={styles.titleContainer}>
+            <View style={{ position: 'relative' }}>
+                <Video
+                    source={{ uri: item.url }}
+                    style={styles.thumbnail}
+                    resizeMode="cover"
+                    isMuted
+                    shouldPlay={false}
+                    usePoster={!!item.thumbnailUrl}
+                    posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
+                />
                 <TouchableOpacity
                     style={styles.heartIcon}
                     onPress={() => toggleFavorite(item._id)}
@@ -127,6 +127,8 @@ export default function AllVideos() {
                         {item.isFavourite ? '❤️' : '🤍'}
                     </Text>
                 </TouchableOpacity>
+            </View>
+            <View style={styles.titleContainer}>
                 <Text style={scheme === 'dark' ? styles.titleDark : styles.title}>{item.title}</Text>
             </View>
         </TouchableOpacity>
@@ -291,15 +293,25 @@ const styles = StyleSheet.create({
     titleContainer: {
         alignItems: 'center',
         paddingHorizontal: 8,
-        paddingTop: 32,
+        paddingTop: 0,
         position: 'relative',
     },
     heartIcon: {
         position: 'absolute',
-        right: 8,
+        right: 5,
         top: 4,
-        padding: 4,
-        zIndex: 1,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+        elevation: 2,
     },
     heartText: {
         fontSize: 20,
