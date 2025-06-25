@@ -1,20 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    ActivityIndicator,
+    StyleSheet,
+    useColorScheme,
+    ScrollView,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getVideos } from '../services/api';
+import { getVideos, toggleFavourite } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { Video } from 'expo-av';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { toggleFavourite } from '../services/api';
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+    useFonts,
+    Poppins_400Regular,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+} from '@expo-google-fonts/poppins';
+import CustomHeader from '../components/CustomHeader';
 
 export default function AllVideos() {
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [role, setRole] = useState('student');
-    const [favorites, setFavorites] = useState([]);
     const router = useRouter();
     const params = useLocalSearchParams();
+    const scheme = useColorScheme();
+
+    const [fontsLoaded] = useFonts({
+        Poppins_400Regular,
+        Poppins_600SemiBold,
+        Poppins_700Bold,
+    });
 
     useEffect(() => {
         const getRole = async () => {
@@ -23,57 +43,33 @@ export default function AllVideos() {
             setRole(user.role || 'student');
         };
         getRole();
-        loadFavorites();
     }, []);
 
-    const loadFavorites = async () => {
-        try {
-            const token = await getToken();
-            const user = jwtDecode(token);
-            const userId = user.id || user._id;
-            const favoritesKey = `favorites_${userId}`;
-            const storedFavorites = await AsyncStorage.getItem(favoritesKey);
-            if (storedFavorites) {
-                setFavorites(JSON.parse(storedFavorites));
-            }
-        } catch (error) {
-            console.error('Error loading favorites:', error);
-        }
-    };
-
-    const saveFavorites = async (newFavorites) => {
-        try {
-            const token = await getToken();
-            const user = jwtDecode(token);
-            const userId = user.id || user._id;
-            const favoritesKey = `favorites_${userId}`;
-            await AsyncStorage.setItem(favoritesKey, JSON.stringify(newFavorites));
-            setFavorites(newFavorites);
-        } catch (error) {
-            console.error('Error saving favorites:', error);
-        }
-    };
-
     const toggleFavorite = async (videoId) => {
-        const isFavorite = favorites.includes(videoId);
-        let newFavorites;
-        
-        if (isFavorite) {
-            newFavorites = favorites.filter(id => id !== videoId);
-        } else {
-            newFavorites = [...favorites, videoId];
-        }
-        
-        // Save to local storage
-        await saveFavorites(newFavorites);
-        
-        // Also try to update backend if available
-        try {
-            await toggleFavourite(videoId);
-        } catch (error) {
-            console.log('Backend favorite toggle failed, using local storage only');
-        }
-    };
+    const currentVideo = videos.find(v => v._id === videoId);
+    if (!currentVideo) return;
+
+    const newValue = !currentVideo.isFavourite;
+
+    try {
+        setVideos(prev =>
+            prev.map(video =>
+                video._id === videoId ? { ...video, isFavourite: newValue } : video
+            )
+        );
+
+        await toggleFavourite(videoId, newValue);
+    } catch (err) {
+        console.error(err);
+        // Optional: revert UI
+        setVideos(prev =>
+            prev.map(video =>
+                video._id === videoId ? { ...video, isFavourite: !newValue } : video
+            )
+        );
+    }
+};
+
 
     const handleVideoPress = (item) => {
         router.push(`/video-review/${item._id}`);
@@ -83,16 +79,16 @@ export default function AllVideos() {
         const fetchVideos = async () => {
             setLoading(true);
             try {
-                let filter = {};
                 const token = await getToken();
                 const user = jwtDecode(token);
-
-                params.studentId && (filter.studentId = params.studentId);
-                params.coachId && (filter.coachId = params.coachId);
-
-                filter.userId = user.id || user._id;
+                const filter = {
+                    ...(params.studentId && { studentId: params.studentId }),
+                    ...(params.coachId && { coachId: params.coachId }),
+                    userId: user.id || user._id,
+                };
                 const res = await getVideos(filter);
-                setVideos(res.data.list);
+                const fetchedVideos = res.data.list || [];
+                setVideos(fetchedVideos);
             } catch (err) {
                 console.error('Failed to fetch videos:', err);
                 setVideos([]);
@@ -103,27 +99,25 @@ export default function AllVideos() {
         fetchVideos();
     }, [params.studentId, params.coachId]);
 
-    const renderItem = ({ item }) => (
-        <View style={styles.card}>
-            <TouchableOpacity onPress={() => handleVideoPress(item)}>
-                <View style={styles.videoContainer}>
-                    <Video
-                        source={{ uri: item.url }}
-                        style={styles.thumbnail}
-                        resizeMode="cover"
-                        isMuted
-                        shouldPlay={false}
-                        {...(item.thumbnailUrl
-                            ? {
-                                usePoster: true,
-                                posterSource: { uri: item.thumbnailUrl }
-                            }
-                            : {})}
-                    />
-                </View>
-            </TouchableOpacity>
-            
-            {/* Heart Icon positioned above title */}
+    // Calculate favorites count from videos array
+    const favoritesCount = videos.filter(video => video.isFavourite).length;
+
+    const renderItem = (item) => (
+        <TouchableOpacity
+            key={item._id}
+            style={scheme === 'dark' ? styles.cardDark : styles.card}
+            onPress={() => router.push(`/video-review/${item._id}`)}
+            activeOpacity={0.9}
+        >
+            <Video
+                source={{ uri: item.url }}
+                style={styles.thumbnail}
+                resizeMode="cover"
+                isMuted
+                shouldPlay={false}
+                usePoster={!!item.thumbnailUrl}
+                posterSource={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined}
+            />
             <View style={styles.titleContainer}>
                 <TouchableOpacity
                     style={styles.heartIcon}
@@ -131,115 +125,163 @@ export default function AllVideos() {
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                     <Text style={styles.heartText}>
-                        {favorites.includes(item._id) ? '❤️' : '🤍'}
+                        {item.isFavourite ? '❤️' : '🤍'}
                     </Text>
                 </TouchableOpacity>
-                <Text style={styles.title}>{item.title}</Text>
+                <Text style={scheme === 'dark' ? styles.titleDark : styles.title}>{item.title}</Text>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
-    return (
-        <View style={styles.container}>
-            <View style={styles.headerContainer}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => {
-                        if (role === 'coach') {
-                            router.replace('/coach');
-                        } else {
-                            router.replace('/student');
-                        }
-                    }}
-                >
-                    <Text style={styles.backButtonText}>← Back to Profile</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                    style={styles.favoritesButton}
-                    onPress={() => router.push('/favourites')}
-                >
-                    <Text style={styles.favoritesButtonText}>❤️ Favorites ({favorites.length})</Text>
-                </TouchableOpacity>
+    if (!fontsLoaded || loading) {
+        return (
+            <View style={scheme === 'dark' ? styles.centeredDark : styles.centered}>
+                <ActivityIndicator size="large" color={scheme === 'dark' ? '#8ab4f8' : '#1976d2'} />
             </View>
-            
-            <Text style={styles.header}>Videos</Text>
-            
-            <TouchableOpacity style={styles.newRecordingTop} onPress={() => {
-                if (params.studentId) {
-                    router.push(`/record-video?studentId=${params.studentId}`);
-                } else {
-                    router.push('/record-video');
-                }
-            }}>
-                <Text style={styles.newRecordingIcon}>🎥</Text>
-                <Text style={styles.newRecordingText}>New Recording</Text>
-            </TouchableOpacity>
-            
-            <FlatList
-                data={videos}
-                renderItem={renderItem}
-                keyExtractor={item => item._id}
-                numColumns={2}
-                ListEmptyComponent={
-                    loading
-                        ? <Text style={styles.emptyText}>Loading...</Text>
-                        : <Text style={styles.emptyText}>No videos yet.</Text>
-                }
+        );
+    }
+
+    return (
+        <View style={scheme === 'dark' ? styles.containerDark : styles.container}>
+            <CustomHeader 
+                title="Your Videos"
+                onBackPress={() => router.replace(role === 'coach' ? '/coach' : '/student')}
             />
+
+            <TouchableOpacity
+                style={styles.favoritesButton}
+                onPress={() => router.push('/favourites')}
+                activeOpacity={0.8}
+            >
+                <Text style={styles.favoritesButtonText}>❤️ {favoritesCount}</Text>
+            </TouchableOpacity>
+
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <TouchableOpacity
+                    onPress={() =>
+                        router.push(
+                            params.studentId
+                                ? `/record-video?studentId=${params.studentId}`
+                                : '/record-video'
+                        )
+                    }
+                    activeOpacity={0.8}
+                    style={styles.newRecordingContainer}
+                >
+                    <LinearGradient
+                        colors={['#8ab4f8', '#1976d2']}
+                        style={styles.newRecording}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                    >
+                        <Text style={styles.recordIcon}>🎥</Text>
+                        <Text style={styles.recordText}>New Recording</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+
+                <View style={styles.grid}>
+                    {videos.length === 0 ? (
+                        <Text style={scheme === 'dark' ? styles.emptyTextDark : styles.emptyText}>No videos yet.</Text>
+                    ) : (
+                        videos.map(renderItem)
+                    )}
+                </View>
+            </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: '#fff', 
-        paddingVertical: 16, 
-        paddingHorizontal: 16 
+    container: {
+        flex: 1,
+        backgroundColor: '#f4f8fb',
     },
-    headerContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    containerDark: {
+        flex: 1,
+        backgroundColor: '#181c24',
+    },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16
+        backgroundColor: '#f4f8fb',
     },
-    backButton: {
-        flex: 1
+    centeredDark: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#181c24',
     },
-    backButtonText: { 
-        fontSize: 18, 
-        color: '#1976d2' 
+    scrollContent: {
+        paddingHorizontal: 16,
+        paddingTop: 20,
+        paddingBottom: 40,
+    },
+    newRecordingContainer: {
+        marginBottom: 20,
+    },
+    newRecording: {
+        padding: 20,
+        borderRadius: 16,
+        alignItems: 'center',
+    },
+    recordIcon: {
+        fontSize: 36,
+        marginBottom: 8,
+        color: '#fff',
+    },
+    recordText: {
+        fontSize: 16,
+        fontFamily: 'Poppins_600SemiBold',
+        color: '#fff',
     },
     favoritesButton: {
-        backgroundColor: '#f8f9fa',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#e9ecef'
+        position: 'absolute',
+        top: 20,
+        right: 16,
+        backgroundColor: '#ff6b6b',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     favoritesButtonText: {
-        fontSize: 14,
-        color: '#495057',
-        fontWeight: '500'
+        color: '#fff',
+        fontSize: 13,
+        fontFamily: 'Poppins_600SemiBold',
     },
-    header: { 
-        fontSize: 22, 
-        fontWeight: 'bold', 
-        marginBottom: 16 
+    grid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
     },
     card: {
-        flex: 1,
-        margin: 8,
-        alignItems: 'stretch',
-        backgroundColor: '#eee',
-        borderRadius: 8,
-        minWidth: 0,
-        paddingBottom: 8,
+        width: '48%',
+        marginBottom: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
+        borderColor: '#e0e0e0',
     },
-    videoContainer: {
-        position: 'relative',
+    cardDark: {
+        width: '48%',
+        marginBottom: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        overflow: 'hidden',
+        backgroundColor: '#23243a',
+        borderColor: '#333',
     },
     thumbnail: {
         width: '100%',
@@ -250,9 +292,8 @@ const styles = StyleSheet.create({
     titleContainer: {
         alignItems: 'center',
         paddingHorizontal: 8,
-        paddingTop: 8,
+        paddingTop: 32,
         position: 'relative',
-        paddingTop: 32, // Extra space for the heart icon
     },
     heartIcon: {
         position: 'absolute',
@@ -264,37 +305,34 @@ const styles = StyleSheet.create({
     heartText: {
         fontSize: 20,
     },
-    title: { 
-        fontWeight: 'bold', 
+    title: {
+        padding: 10,
+        fontSize: 13,
+        fontFamily: 'Poppins_600SemiBold',
         textAlign: 'center',
-        fontSize: 14,
-        marginTop: 4,
+        color: '#222f3e',
     },
-    newRecordingTop: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#e3f2fd',
-        marginBottom: 16,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#1976d2',
-    },
-    newRecordingIcon: { 
-        fontSize: 20, 
-        marginRight: 8 
-    },
-    newRecordingText: {
-        fontSize: 16,
-        color: '#1976d2',
-        fontWeight: '600',
+    titleDark: {
+        padding: 10,
+        fontSize: 13,
+        fontFamily: 'Poppins_600SemiBold',
+        textAlign: 'center',
+        color: '#f5f6fa',
     },
     emptyText: {
-        textAlign: 'center',
-        marginTop: 32,
         fontSize: 16,
-        color: '#666'
-    }
+        textAlign: 'center',
+        paddingTop: 40,
+        fontFamily: 'Poppins_400Regular',
+        width: '100%',
+        color: '#222f3e',
+    },
+    emptyTextDark: {
+        fontSize: 16,
+        textAlign: 'center',
+        paddingTop: 40,
+        fontFamily: 'Poppins_400Regular',
+        width: '100%',
+        color: '#f5f6fa',
+    },
 });

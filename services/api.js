@@ -38,4 +38,24 @@ export const uploadAnnotationFeedback = (formData) =>
   API.post('/videos/feedback', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
+export const toggleFavourite = (videoId, isFavourite) => {
+    return API.put(`/video/${videoId}`, { isFavourite });
+};
+
 export default API;
+
+export const getFavourites = (userId) =>
+  API.post('/video/list', { 
+    params: { 
+      userId: userId,
+      isFavourite: true 
+    } 
+  });
+
+// Get a specific video by ID
+export const getVideoById = (videoId) =>
+  API.get(`/video/${videoId}`);
+
+// Clear all favourites for a user (optional)
+export const clearAllFavourites = (userId) =>
+  API.delete(`/video/favourites/${userId}`);
