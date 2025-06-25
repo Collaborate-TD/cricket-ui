@@ -2,7 +2,7 @@ node_modules/
 .expo/
 .expo-shared/
 web-build/
+android/
 .DS_Store
 .env
 package-lock.json
-android/
