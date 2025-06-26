@@ -7,6 +7,8 @@ import { jwtDecode } from 'jwt-decode';
 import AnnotationToolbar from './AnnotationToolbar';
 import AnnotationCanvas from './AnnotationCanvas';
 import CommentInputModal from './CommentInputModal';
+import CustomHeader from '../components/CustomHeader';
+import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,6 +27,7 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
     const [comment, setComment] = useState('');
 
     const videoRef = useRef(null);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchVideo = async () => {
@@ -110,6 +113,12 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
 
     return (
         <View style={styles.container}>
+            <CustomHeader
+                title={"Preview"}
+                onBackPress={() => router.back()}
+                showBackButton={true}
+                defaultRoute="/student"
+            />
             {customFullscreen ? (
                 <View style={styles.fullscreenContainer}>
                     <Video
@@ -194,66 +203,117 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff', paddingVertical: 16, paddingHorizontal: 0 },
+    container: {
+        flex: 1,
+        backgroundColor: '#f4f8fb',
+        paddingVertical: 16,
+        paddingHorizontal: 0,
+    },
     video: {
-        width: '100%',
-        aspectRatio: 16 / 9,
+        width: '96%',
+        aspectRatio: 16 / 20,
         backgroundColor: '#000',
-        borderRadius: 8,
+        borderRadius: 16,
         alignSelf: 'center',
-        maxWidth: 600,
+        maxWidth: 700,
+        marginTop: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
     },
     fullscreenContainer: {
         position: 'absolute',
         top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: '#000',
+        backgroundColor: '#111',
         zIndex: 100,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingHorizontal: 0,
     },
     fullscreenVideo: {
         width: '100%',
         height: '100%',
         backgroundColor: '#000',
+        borderRadius: 0,
     },
-    videoId: { marginTop: 16, textAlign: 'center', color: '#666' },
+    videoId: {
+        marginTop: 8,
+        textAlign: 'center',
+        color: '#888',
+        fontSize: 13,
+        letterSpacing: 0.5,
+    },
     annotateBtn: {
         position: 'absolute',
-        top: 30,
-        right: 20,
+        top: 36,
+        right: 28,
         backgroundColor: '#1976d2',
-        padding: 10,
-        borderRadius: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 24,
         zIndex: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 4,
     },
-    annotateBtnText: { color: '#fff', fontWeight: 'bold' },
-    exitFullscreenBtn: {
-        position: 'absolute',
-        top: 30,
-        left: 20,
-        backgroundColor: '#1976d2',
-        padding: 10,
-        borderRadius: 20,
-        zIndex: 10,
-    },
-    exitFullscreenText: {
+    annotateBtnText: {
         color: '#fff',
         fontWeight: 'bold',
+        fontSize: 16,
+        letterSpacing: 0.5,
+    },
+    exitFullscreenBtn: {
+        position: 'absolute',
+        top: 36,
+        left: 28,
+        backgroundColor: '#fff',
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 24,
+        zIndex: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    exitFullscreenText: {
+        color: '#1976d2',
+        fontWeight: 'bold',
+        fontSize: 16,
+        letterSpacing: 0.5,
     },
     fullscreenBtn: {
-        marginTop: 10,
+        marginTop: 18,
         alignSelf: 'center',
         backgroundColor: '#1976d2',
-        padding: 10,
-        borderRadius: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 24,
+        borderRadius: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.10,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    fullscreenBtnText: { color: '#fff', fontWeight: 'bold' },
-    videoTitle: {
-        fontSize: 18,
+    fullscreenBtnText: {
+        color: '#fff',
         fontWeight: 'bold',
-        marginTop: 8,
+        fontSize: 16,
+        letterSpacing: 0.5,
+    },
+    videoTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginTop: 18,
         marginBottom: 4,
         textAlign: 'center',
+        color: '#222f3e',
+        letterSpacing: 0.5,
     },
     annotationOverlay: {
         position: 'absolute',
@@ -261,7 +321,7 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         top: 0,
-        backgroundColor: 'rgba(0,0,0,0.05)',
+        backgroundColor: 'rgba(0,0,0,0.10)',
         zIndex: 200,
         justifyContent: 'flex-end',
         alignItems: 'center',
