@@ -97,7 +97,7 @@ export default function ForgotPassword() {
 const styles = StyleSheet.create({
     background: {
         flex: 1,
-        backgroundColor: '#f4f8fb',
+        backgroundColor: '#000',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#1976d2',
+        color: '#000',
         marginBottom: 10,
         textAlign: 'center',
         letterSpacing: 0.5,
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
         color: '#222',
     },
     button: {
-        backgroundColor: '#1976d2',
+        backgroundColor: 'rgb(70 66 125)',
         paddingVertical: 15,
         borderRadius: 8,
         alignItems: 'center',
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     linkText: {
-        color: '#1976d2',
+        color: '#000',
         fontSize: 16,
         fontWeight: '500',
     },

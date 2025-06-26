@@ -84,4 +84,6 @@ export const deleteAnnotation = (videoId, annotationId, token) =>
     headers: { Authorization: `Bearer ${token}` }
   });
 
+export const deleteVideos = (videoIds) =>
+    API.delete('/video/delete', { data: { ids: videoIds } });
 export default API;
