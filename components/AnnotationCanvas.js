@@ -1,16 +1,16 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { View, PanResponder, Dimensions } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
-const AnnotationCanvas = ({
+const AnnotationCanvas = forwardRef(({
   frameData = { drawings: [] },
   onChange,
   selectedTool = 'freehand',
   selectedColor = '#FF0000',
   selectedThickness = 4,
-}) => {
+}, ref) => {
   const [drawing, setDrawing] = useState(null);
   const drawingRef = useRef(drawing);
 
@@ -18,6 +18,16 @@ const AnnotationCanvas = ({
   useEffect(() => {
     drawingRef.current = drawing;
   }, [drawing]);
+
+  useEffect(() => {
+    if (drawing) {
+      setDrawing((prev) => ({
+        ...prev,
+        color: selectedColor,
+        thickness: selectedThickness,
+      }));
+    }
+  }, [selectedColor, selectedThickness]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -65,15 +75,23 @@ const AnnotationCanvas = ({
       ? `M${points.map((p) => `${p.x},${p.y}`).join(' L')}`
       : '';
 
+  // Expose the undoLastDrawing method to parent
+  useImperativeHandle(ref, () => ({
+    undoLastDrawing: () => {
+      if (frameData.drawings && frameData.drawings.length > 0) {
+        onChange({
+          ...frameData,
+          drawings: frameData.drawings.slice(0, -1),
+        });
+      }
+    }
+  }));
+
   return (
     <View
       style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
         width,
         height,
-        zIndex: 1000,
       }}
       {...panResponder.panHandlers}
     >
@@ -102,8 +120,9 @@ const AnnotationCanvas = ({
           />
         )}
       </Svg>
+      
     </View>
   );
-};
+});
 
 export default AnnotationCanvas;

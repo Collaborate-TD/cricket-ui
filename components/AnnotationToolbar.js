@@ -19,6 +19,8 @@ const AnnotationToolbar = ({
   onAddComment,
   onSave,
   onExit,
+  canvasRef,
+  onUndo,
 }) => (
   <View style={styles.toolbar}>
     <View style={styles.row}>
@@ -72,6 +74,9 @@ const AnnotationToolbar = ({
       <TouchableOpacity style={styles.actionBtn} onPress={onExit}>
         <Text>Exit</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.actionBtn} onPress={onUndo}>
+        <Text>Undo</Text>
+      </TouchableOpacity>
     </View>
   </View>
 );
@@ -123,6 +128,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     borderRadius: 4,
     backgroundColor: '#ddeeff',
+  },
+  annotationOverlay: {
+    backgroundColor: 'rgba(0,0,0,0.10)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 40,
+    flex: 1,
   },
 });
 

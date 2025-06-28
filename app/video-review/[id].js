@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Alert } from 'react-native';
+import { View, ActivityIndicator, Alert, Text } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getVideos } from '../../services/api';
 import VideoPlayerWithAnnotations from '../../components/VideoPlayerWithAnnotations';
@@ -70,6 +70,33 @@ const VideoReviewScreen = ({ userId, token }) => {
     }
   };
 
+  // Final save handler with annotation check
+  const handleFinalSave = async () => {
+    try {
+      setLoading(true);
+      
+      // Filter out empty annotations
+      const filteredAnnotations = annotations.filter(frame => 
+        frame && (frame.drawings?.length > 0 || frame.comment)
+      );
+      
+      await addAnnotation(videoId, {
+        coachId: userId,
+        data: filteredAnnotations,
+      }, token);
+      
+      Alert.alert("Success", "All annotations have been saved successfully!");
+      await removeAnnotationsLocally(videoId);
+      
+      // Don't try to access VideoPreviewSection state here
+    } catch (error) {
+      console.error("Failed to save annotations:", error);
+      Alert.alert("Error", "Failed to save annotations. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Add this handler for exiting annotation mode without saving
   const handleExitAnnotation = () => {
     setAnnotationMode(false);
@@ -98,22 +125,13 @@ const VideoReviewScreen = ({ userId, token }) => {
 
   return (
     <View style={{ flex: 1 }}>
-      {!annotationMode ? (
-        <VideoPreviewSection
-          videoId={videoId}
-          onAnnotate={() => setAnnotationMode(true)}
-          annotations={annotations}
-          setAnnotations={setAnnotations}
-        />
-      ) : (
-        <VideoPlayerWithAnnotations
-          videoUri={videoUri}
-          annotations={annotations}
-          setAnnotations={setAnnotations}
-          onSave={handleSave}
-          onExit={handleExitAnnotation}
-        />
-      )}
+      <VideoPreviewSection
+        videoId={videoId}
+        onAnnotate={() => {}} // Empty function as we're handling annotation in the component
+        annotations={annotations}
+        setAnnotations={setAnnotations}
+        onSaveFinal={handleFinalSave} // Add this prop to VideoPreviewSection
+      />
     </View>
   );
 };

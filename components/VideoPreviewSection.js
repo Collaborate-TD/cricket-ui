@@ -9,10 +9,11 @@ import AnnotationCanvas from './AnnotationCanvas';
 import CommentInputModal from './CommentInputModal';
 import CustomHeader from '../components/CustomHeader';
 import { useRouter } from 'expo-router';
+import FrameNavigation from './FrameNavigation';
 
 const { width, height } = Dimensions.get('window');
 
-export default function VideoPreviewSection({ videoId, onAnnotate, annotations, setAnnotations }) {
+export default function VideoPreviewSection({ videoId, onAnnotate, annotations, setAnnotations, onSaveFinal }) {
     const [video, setVideo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [customFullscreen, setCustomFullscreen] = useState(false);
@@ -108,6 +109,23 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
         if (tool === 'freehand') setSelectedTool(tool);
     };
 
+    // Add this function inside the component
+    const handleVideoProgress = (playbackStatus) => {
+        if (!isCoach && playbackStatus.isPlaying) {
+            const currentSecond = Math.floor(playbackStatus.positionMillis / 1000);
+            // Check if there's an annotation for this second
+            const hasAnnotation = annotations[currentSecond] && 
+                (annotations[currentSecond].drawings?.length > 0 || annotations[currentSecond].comment);
+                
+            if (hasAnnotation) {
+                // Pause the video to show annotation
+                videoRef.current.pauseAsync();
+                setCurrentSecond(currentSecond);
+                setShowAnnotationOverlay(true);
+            }
+        }
+    };
+
     if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
     if (!video) return <Text style={{ flex: 1, textAlign: 'center', marginTop: 40 }}>Video not found.</Text>;
 
@@ -128,9 +146,26 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                         useNativeControls
                         resizeMode="contain"
                         onLoad={handleVideoLoad}
+                        onPlaybackStatusUpdate={handleVideoProgress}
                     />
                     {isCoach && !showAnnotationOverlay && (
-                        <TouchableOpacity style={styles.annotateBtn} onPress={() => setShowAnnotationOverlay(true)}>
+                        <TouchableOpacity style={styles.annotateBtn} onPress={async () => {
+    if (videoRef.current) {
+        try {
+            // Get current video position
+            const status = await videoRef.current.getStatusAsync();
+            // Convert to seconds and set as current second
+            const currentPos = Math.floor(status.positionMillis / 1000);
+            setCurrentSecond(currentPos);
+            // Pause video
+            videoRef.current.setStatusAsync({ shouldPlay: false });
+            setShowAnnotationOverlay(true);
+        } catch (error) {
+            console.error("Failed to get video position:", error);
+            setShowAnnotationOverlay(true);
+        }
+    }
+}}>
                             <Text style={styles.annotateBtnText}>Annotate</Text>
                         </TouchableOpacity>
                     )}
@@ -142,6 +177,42 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                     </TouchableOpacity>
                     {showAnnotationOverlay && (
                         <View style={styles.annotationOverlay}>
+                          <View style={styles.frameNavigationContainer}>
+                            <Text style={styles.frameInfo}>
+                              Frame {currentSecond + 1} of {Math.min(totalSeconds, 5)} ({currentSecond + 1}s)
+                            </Text>
+                            
+                            <FrameNavigation
+                              totalFrames={Math.min(totalSeconds, 5)}
+                              currentFrame={currentSecond}
+                              onFrameChange={(second) => {
+                                // First save current frame before switching
+                                setAnnotations((prev) => {
+                                  const updated = [...prev];
+                                  updated[currentSecond] = {
+                                    ...updated[currentSecond],
+                                    drawings: updated[currentSecond]?.drawings || [],
+                                    comment: comment,
+                                  };
+                                  return updated;
+                                });
+                                
+                                // Then switch to new frame
+                                setCurrentSecond(second);
+                                if (videoRef.current) {
+                                    videoRef.current.setStatusAsync({ 
+                                        positionMillis: second * 1000, 
+                                        shouldPlay: false 
+                                    });
+                                }
+                              }}
+                              annotatedFrames={annotations
+                                .map((frame, index) => 
+                                  frame && (frame.drawings?.length > 0 || frame.comment) ? index : null)
+                                .filter(index => index !== null)}
+                            />
+                          </View>
+
                             <AnnotationCanvas
                                 frame={currentSecond}
                                 frameData={annotations[currentSecond]}
@@ -198,6 +269,19 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                     <Text style={styles.videoId}>Video ID: {video?._id}</Text>
                 </View>
             )}
+            {isCoach && annotations.some(a => a && (a.drawings?.length > 0 || a.comment)) && (
+    <TouchableOpacity 
+        style={styles.saveAllBtn}
+        onPress={() => {
+            if (onSaveFinal) onSaveFinal(annotations);
+        }}
+    >
+        <Text style={styles.saveAllBtnText}>Save All Annotations</Text>
+    </TouchableOpacity>
+)}
+            <TouchableOpacity style={styles.continueBtn} onPress={() => router.push('/nextPage')}>
+                <Text style={styles.continueBtnText}>Continue</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -328,5 +412,48 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         width: '100%',
         height: '100%',
+    },
+    frameNavigationContainer: {
+      position: 'absolute',
+      top: 80,
+      width: '100%',
+      paddingHorizontal: 16,
+      zIndex: 210,
+    },
+    frameInfo: {
+      fontSize: 14,
+      color: '#fff',
+      marginBottom: 8,
+      textAlign: 'center',
+      fontWeight: 'bold',
+    },
+    saveAllBtn: {
+        position: 'absolute',
+        bottom: 36,
+        right: 28,
+        backgroundColor: '#4CAF50',
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 24,
+        zIndex: 10,
+    },
+    saveAllBtnText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    continueBtn: {
+        position: 'absolute',
+        bottom: 20,
+        alignSelf: 'center',
+        backgroundColor: '#4CAF50',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+    },
+    continueBtnText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 });
