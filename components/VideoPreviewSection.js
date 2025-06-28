@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, StyleSheet, Dimensions, Alert } from 'react-native';
 import { Video } from 'expo-av';
 import { getVideos } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
@@ -26,6 +26,8 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
     const [selectedThickness, setSelectedThickness] = useState(4);
     const [showCommentModal, setShowCommentModal] = useState(false);
     const [comment, setComment] = useState('');
+    // Add a new state variable to track individual frame saves
+    const [hasSavedFrames, setHasSavedFrames] = useState(false);
 
     const videoRef = useRef(null);
     const router = useRouter();
@@ -50,15 +52,22 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
         fetchVideo();
     }, [videoId]);
 
+    // Make sure this function is correctly determining coach status
     useEffect(() => {
-        const checkRole = async () => {
-            const token = await getToken();
-            if (token) {
-                const user = jwtDecode(token);
-                setIsCoach(user.role === 'coach');
-            }
-        };
-        checkRole();
+      const checkIfCoach = async () => {
+        try {
+          const token = await getToken();
+          if (token) {
+            const user = jwtDecode(token);
+            // Make sure this field matches your user object structure
+            setIsCoach(user.role === 'coach');
+          }
+        } catch (error) {
+          console.error('Error checking coach status:', error);
+        }
+      };
+      
+      checkIfCoach();
     }, []);
 
     // Get video duration in seconds
@@ -71,14 +80,18 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
     useEffect(() => {
         if (videoRef.current) {
             videoRef.current.setStatusAsync({ positionMillis: currentSecond * 1000, shouldPlay: false });
+            console.log(`Set video to second ${currentSecond}`);
         }
+        
         // Load existing comment for this second
         const frameData = annotations[currentSecond] || { drawings: [], comment: '' };
+        console.log(`Loaded comment for second ${currentSecond}:`, frameData.comment);
         setComment(frameData.comment || '');
     }, [currentSecond]);
 
     // Save annotation for current second
     const handleSave = () => {
+        console.log(`Saving annotation for second ${currentSecond}`);
         setAnnotations((prev) => {
             const updated = [...prev];
             updated[currentSecond] = {
@@ -88,20 +101,29 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
             };
             return updated;
         });
-        setShowAnnotationOverlay(false);
+        
+        // Just mark that we have saved frames, without showing an alert
+        setHasSavedFrames(true);
     };
 
-    // Handle drawing change
+    // Replace handleAnnotationChange with this simpler version:
     const handleAnnotationChange = (second, newFrameData) => {
-        setAnnotations((prev) => {
-            const updated = [...prev];
-            updated[second] = {
-                ...updated[second],
-                ...newFrameData,
-                comment: comment, // keep comment in sync
-            };
-            return updated;
-        });
+      console.log('Annotation change for second:', second);
+      
+      setAnnotations(prev => {
+        const updated = [...prev];
+        
+        // Preserve existing comment and drawings
+        updated[second] = {
+            ...updated[second],
+            ...newFrameData,
+            comment: comment || (updated[second]?.comment || ''),
+        };
+        
+        return updated;
+      });
+      
+      setHasSavedFrames(true);
     };
 
     // Only freehand tool enabled
@@ -126,6 +148,40 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
         }
     };
 
+    // Replace your frame navigation handler with this:
+    const handleFrameChange = (second) => {
+      // Save current frame data...
+      
+      // Then immediately load the comment for the new frame
+      const newFrameData = annotations[second] || { drawings: [], comment: '' };
+      setComment(newFrameData.comment || '');
+      
+      // Create a new annotations array instead of updating state directly
+      const updatedAnnotations = [...annotations];
+      updatedAnnotations[currentSecond] = {
+        ...updatedAnnotations[currentSecond],
+        drawings: updatedAnnotations[currentSecond]?.drawings || [],
+        comment: comment,
+      };
+      
+      // Update annotations first
+      setAnnotations(updatedAnnotations);
+      
+      // Then update the current second
+      setCurrentSecond(second);
+      
+      // Update hasSavedFrames flag
+      setHasSavedFrames(true);
+      
+      // Explicitly seek the video
+      if (videoRef.current) {
+        videoRef.current.setStatusAsync({ 
+          positionMillis: second * 1000, 
+          shouldPlay: false 
+        });
+      }
+    };
+
     if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
     if (!video) return <Text style={{ flex: 1, textAlign: 'center', marginTop: 40 }}>Video not found.</Text>;
 
@@ -148,35 +204,70 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                         onLoad={handleVideoLoad}
                         onPlaybackStatusUpdate={handleVideoProgress}
                     />
-                    {isCoach && !showAnnotationOverlay && (
-                        <TouchableOpacity style={styles.annotateBtn} onPress={async () => {
-    if (videoRef.current) {
-        try {
-            // Get current video position
+                    {isCoach && (
+  showAnnotationOverlay ? (
+    // Show "Save All Annotations" when in annotation mode
+    <TouchableOpacity 
+      style={[
+        styles.annotateBtn, 
+        { 
+            backgroundColor: '#4CAF50',
+            zIndex: 250 // Increase z-index to be higher than overlay (200)
+        }
+    ]}
+      onPress={() => {
+        if (onSaveFinal) onSaveFinal(annotations);
+        setShowAnnotationOverlay(false);
+        setHasSavedFrames(false); // Reset after saving all
+        Alert.alert("Success", "All annotations saved successfully!");
+      }}
+    >
+      <Text style={styles.annotateBtnText}>Save All Annotations</Text>
+    </TouchableOpacity>
+  ) : (
+    // Show "Annotate" when not in annotation mode
+    <TouchableOpacity 
+      style={styles.annotateBtn}
+      onPress={async () => {
+        if (videoRef.current) {
+          try {
             const status = await videoRef.current.getStatusAsync();
-            // Convert to seconds and set as current second
             const currentPos = Math.floor(status.positionMillis / 1000);
             setCurrentSecond(currentPos);
-            // Pause video
-            videoRef.current.setStatusAsync({ shouldPlay: false });
+            await videoRef.current.setStatusAsync({ shouldPlay: false });
             setShowAnnotationOverlay(true);
-        } catch (error) {
+          } catch (error) {
             console.error("Failed to get video position:", error);
             setShowAnnotationOverlay(true);
+          }
         }
-    }
-}}>
-                            <Text style={styles.annotateBtnText}>Annotate</Text>
-                        </TouchableOpacity>
-                    )}
-                    <TouchableOpacity style={styles.exitFullscreenBtn} onPress={() => {
-                        setCustomFullscreen(false);
-                        setShowAnnotationOverlay(false);
-                    }}>
+      }}
+    >
+      <Text style={styles.annotateBtnText}>Annotate</Text>
+    </TouchableOpacity>
+  )
+)}
+                    <TouchableOpacity 
+                        style={[
+                            styles.exitFullscreenBtn,
+                            { zIndex: 250 } // Increase z-index to be higher than overlay
+                        ]} 
+                        onPress={() => {
+                            setCustomFullscreen(false);
+                            setShowAnnotationOverlay(false);
+                        }}
+                    >
                         <Text style={styles.exitFullscreenText}>Exit Fullscreen</Text>
                     </TouchableOpacity>
                     {showAnnotationOverlay && (
-                        <View style={styles.annotationOverlay}>
+                        <View 
+                            style={[
+                                styles.annotationOverlay,
+                                // Add this to prevent capturing events in the top area where buttons are
+                                { paddingTop: 80 } // Add padding at top to avoid drawing over buttons
+                            ]}
+                            pointerEvents="box-none" // This allows clicks to pass through to buttons
+                        >
                           <View style={styles.frameNavigationContainer}>
                             <Text style={styles.frameInfo}>
                               Frame {currentSecond + 1} of {Math.min(totalSeconds, 5)} ({currentSecond + 1}s)
@@ -185,27 +276,7 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                             <FrameNavigation
                               totalFrames={Math.min(totalSeconds, 5)}
                               currentFrame={currentSecond}
-                              onFrameChange={(second) => {
-                                // First save current frame before switching
-                                setAnnotations((prev) => {
-                                  const updated = [...prev];
-                                  updated[currentSecond] = {
-                                    ...updated[currentSecond],
-                                    drawings: updated[currentSecond]?.drawings || [],
-                                    comment: comment,
-                                  };
-                                  return updated;
-                                });
-                                
-                                // Then switch to new frame
-                                setCurrentSecond(second);
-                                if (videoRef.current) {
-                                    videoRef.current.setStatusAsync({ 
-                                        positionMillis: second * 1000, 
-                                        shouldPlay: false 
-                                    });
-                                }
-                              }}
+                              onFrameChange={handleFrameChange}
                               annotatedFrames={annotations
                                 .map((frame, index) => 
                                   frame && (frame.drawings?.length > 0 || frame.comment) ? index : null)
@@ -229,8 +300,21 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                                 selectedThickness={selectedThickness}
                                 onSelectThickness={setSelectedThickness}
                                 onAddComment={() => setShowCommentModal(true)}
-                                onSave={handleSave}
-                                onExit={() => setShowAnnotationOverlay(false)}
+                                onSave={handleSave} // Add this line back
+                                onExit={() => {
+                                    if (hasSavedFrames) {
+                                      Alert.alert(
+                                        "Exit Annotation Mode?", 
+                                        "You have annotations that will be saved when you click Save All Annotations.",
+                                        [
+                                          { text: "Stay in Annotation Mode", style: "cancel" },
+                                          { text: "Exit", onPress: () => setShowAnnotationOverlay(false) }
+                                        ]
+                                      );
+                                    } else {
+                                      setShowAnnotationOverlay(false);
+                                    }
+                                }}
                             />
                             <CommentInputModal
                                 visible={showCommentModal}
@@ -269,18 +353,8 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                     <Text style={styles.videoId}>Video ID: {video?._id}</Text>
                 </View>
             )}
-            {isCoach && annotations.some(a => a && (a.drawings?.length > 0 || a.comment)) && (
-    <TouchableOpacity 
-        style={styles.saveAllBtn}
-        onPress={() => {
-            if (onSaveFinal) onSaveFinal(annotations);
-        }}
-    >
-        <Text style={styles.saveAllBtnText}>Save All Annotations</Text>
-    </TouchableOpacity>
-)}
             <TouchableOpacity style={styles.continueBtn} onPress={() => router.push('/nextPage')}>
-                <Text style={styles.continueBtnText}>Continue</Text>
+                <Text style={styles.continueBtnText}>NIGGESH</Text>
             </TouchableOpacity>
         </View>
     );
@@ -409,7 +483,7 @@ const styles = StyleSheet.create({
         zIndex: 200,
         justifyContent: 'flex-end',
         alignItems: 'center',
-        paddingBottom: 40,
+        paddingTop: 80, // Add this to avoid drawing over buttons
         width: '100%',
         height: '100%',
     },
@@ -426,21 +500,6 @@ const styles = StyleSheet.create({
       marginBottom: 8,
       textAlign: 'center',
       fontWeight: 'bold',
-    },
-    saveAllBtn: {
-        position: 'absolute',
-        bottom: 36,
-        right: 28,
-        backgroundColor: '#4CAF50',
-        paddingVertical: 10,
-        paddingHorizontal: 18,
-        borderRadius: 24,
-        zIndex: 10,
-    },
-    saveAllBtnText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16,
     },
     continueBtn: {
         position: 'absolute',
