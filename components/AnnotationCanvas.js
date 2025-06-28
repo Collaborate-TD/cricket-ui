@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 const { width, height } = Dimensions.get('window');
 
 const AnnotationCanvas = forwardRef(({
+  frame, // Add frame prop to track which frame is being edited
   frameData = { drawings: [] },
   onChange,
   selectedTool = 'freehand',
@@ -19,6 +20,7 @@ const AnnotationCanvas = forwardRef(({
     drawingRef.current = drawing;
   }, [drawing]);
 
+  // Update drawing properties when tool settings change
   useEffect(() => {
     if (drawing) {
       setDrawing((prev) => ({
@@ -28,6 +30,11 @@ const AnnotationCanvas = forwardRef(({
       }));
     }
   }, [selectedColor, selectedThickness]);
+  
+  // Reset drawing state when frame changes
+  useEffect(() => {
+    setDrawing(null);
+  }, [frame]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -57,10 +64,10 @@ const AnnotationCanvas = forwardRef(({
       },
       onPanResponderRelease: () => {
         if (drawingRef.current) {
-          // Save the drawing to parent
+          // Save the drawing to parent component
+          const currentDrawings = frameData?.drawings || [];
           onChange({
-            ...frameData,
-            drawings: [...(frameData.drawings || []), drawingRef.current],
+            drawings: [...currentDrawings, drawingRef.current],
           });
           setDrawing(null);
           drawingRef.current = null;
@@ -78,9 +85,8 @@ const AnnotationCanvas = forwardRef(({
   // Expose the undoLastDrawing method to parent
   useImperativeHandle(ref, () => ({
     undoLastDrawing: () => {
-      if (frameData.drawings && frameData.drawings.length > 0) {
+      if (frameData?.drawings && frameData.drawings.length > 0) {
         onChange({
-          ...frameData,
           drawings: frameData.drawings.slice(0, -1),
         });
       }
@@ -97,7 +103,7 @@ const AnnotationCanvas = forwardRef(({
     >
       <Svg width={width} height={height} style={{ position: 'absolute', top: 0, left: 0 }}>
         {/* Render saved drawings */}
-        {(frameData.drawings || []).map((d, i) => (
+        {(frameData?.drawings || []).map((d, i) => (
           <Path
             key={i}
             d={pointsToPath(d.points)}
@@ -120,7 +126,6 @@ const AnnotationCanvas = forwardRef(({
           />
         )}
       </Svg>
-      
     </View>
   );
 });
