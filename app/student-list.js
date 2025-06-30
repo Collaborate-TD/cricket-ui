@@ -104,6 +104,41 @@ export default function StudentList() {
         }
     };
 
+    const handleRemoveStudent = async (student, studentName) => {
+        Alert.alert(
+            'Remove Student',
+            `Are you sure you want to remove ${studentName} from your approved students?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { 
+                    text: 'Remove', 
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const studentId = student._id || student.userId || student.id;
+                            
+                            await handleUserRequest({ 
+                                approverId: coachId, 
+                                requesterId: studentId, 
+                                action: 'rejected', 
+                                feedback: 'Removed by coach' 
+                            });
+                            
+                            Alert.alert('Student Removed', `${studentName} has been removed from your approved students.`);
+                            await refreshStudentLists(coachId);
+                        } catch (error) {
+                            console.error('Failed to remove student:', error);
+                            Alert.alert(
+                                'Error', 
+                                `Could not remove student. ${error.response?.data?.message || error.message || 'Please try again.'}`
+                            );
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const handleBackPress = () => {
         if (router.canGoBack?.()) {
             router.back();
@@ -166,6 +201,12 @@ export default function StudentList() {
                                 style={scheme === 'dark' ? styles.viewBtnDark : styles.viewBtnLight}
                             >
                                 <Text style={scheme === 'dark' ? styles.actionBtnTextDark : styles.actionBtnTextLight}>View</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => handleRemoveStudent(student, `${student.firstName} ${student.lastName}`)}
+                                style={scheme === 'dark' ? styles.removeBtnDark : styles.removeBtnLight}
+                            >
+                                <Text style={scheme === 'dark' ? styles.removeBtnTextDark : styles.removeBtnTextLight}>Remove</Text>
                             </TouchableOpacity>
                         </StudentCard>
                     ))
@@ -428,6 +469,38 @@ const styles = StyleSheet.create({
         marginLeft: 4,
         backgroundColor: 'transparent',
         borderColor: '#3b5998',
+    },
+
+    // Remove button styles
+    removeBtnLight: {
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        marginLeft: 4,
+        backgroundColor: 'transparent',
+        borderColor: '#d9534f',
+    },
+    removeBtnDark: {
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        marginLeft: 4,
+        backgroundColor: 'transparent',
+        borderColor: '#dc3545',
+    },
+
+    // Remove button text styles
+    removeBtnTextLight: {
+        fontSize: 16,
+        color: '#d9534f',
+        fontWeight: '600',
+    },
+    removeBtnTextDark: {
+        fontSize: 16,
+        color: '#dc3545',
+        fontWeight: '600',
     },
 
     // Action button text styles
