@@ -1,21 +1,29 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
-import { Video } from 'expo-av';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator, Text } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getVideos } from '../../services/api';
-import { getToken } from '../../utils/tokenStorage';
+import VideoPlayerWithAnnotations from '../../components/VideoPlayerWithAnnotations';
+import VideoPreviewSection from '../../components/VideoPreviewSection';
+import { addAnnotation, getAnnotations } from '../../services/api';
+import {
+    loadAnnotationsLocally,
+    saveAnnotationsLocally,
+    removeAnnotationsLocally,
+} from '../../utils/annotationStorage';
+import { API_URL } from '@env';
 import { jwtDecode } from 'jwt-decode';
+import { getToken } from '../../utils/tokenStorage';
+import { showAlert } from '../../utils/alertMessage';
 
-export default function VideoReview() {
+const VideoReviewScreen = ({ userId, token }) => {
+    const { id: videoId } = useLocalSearchParams();
     const router = useRouter();
-    const params = useLocalSearchParams();
-    const id = params.id;
     const [video, setVideo] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [fullscreenOpened, setFullscreenOpened] = useState(false);
-    const videoRef = useRef(null);
+    const [annotations, setAnnotations] = useState([]);
+    const [annotationMode, setAnnotationMode] = useState(false);
 
+    // Load video and annotations on mount
     useEffect(() => {
         const fetchVideo = async () => {
             setLoading(true);
@@ -23,82 +31,110 @@ export default function VideoReview() {
                 let filter = {};
                 const token = await getToken();
                 const user = jwtDecode(token);
-
-                if (params.studentId) {
-                    filter.studentId = params.studentId;
-                } else if (params.coachId) {
-                    filter.coachId = params.coachId;
-                } else {
-                    filter.userId = user.id || user._id;
-                }
-
+                filter.userId = user.id || user._id;
                 const res = await getVideos(filter);
-                const found = res.data.list.find(v => v._id === id);
+                const found = res.data.list.find(v => v._id === videoId);
                 setVideo(found);
-            } catch (err) {
+
+                const remote = await getAnnotations(videoId, token);
+                setAnnotations(remote?.length ? remote[0].data : []);
+            } catch (e) {
                 setVideo(null);
+                showAlert('Error', 'Failed to load video or annotations.');
             } finally {
                 setLoading(false);
             }
         };
         fetchVideo();
-    }, [id, params.studentId, params.coachId]);
+    }, [videoId, token]);
 
-    // Automatically present fullscreen when video is loaded
-    const handleVideoReady = async () => {
-        if (!fullscreenOpened && videoRef.current) {
-            setFullscreenOpened(true);
-            try {
-                await videoRef.current.presentFullscreenPlayer();
-            } catch (e) {
-                // Ignore if not supported on web
-            }
+    // Save annotations locally on change
+    useEffect(() => {
+        if (!loading) {
+            saveAnnotationsLocally(videoId, annotations);
+        }
+    }, [annotations, videoId, loading]);
+
+    // Save and upload handler
+    const handleSave = async () => {
+        try {
+            await saveAnnotationsLocally(videoId, annotations);
+            await addAnnotation(videoId, {
+                coachId: userId,
+                data: annotations,
+            }, token);
+            await removeAnnotationsLocally(videoId);
+            showAlert('Success', 'Annotations saved and uploaded!');
+            setAnnotationMode(false);
+        } catch (e) {
+            showAlert('Error', 'Failed to upload. Annotations are saved locally.');
         }
     };
 
-    const handleFullscreenUpdate = (event) => {
-        // 3 means fullscreen exited
-        if (event.fullscreenUpdate === 3) {
-            setFullscreenOpened(false); // Reset the flag if needed
-            router.replace('/all-videos'); // Go back to the video list
+    // Final save handler with annotation check
+    const handleFinalSave = async () => {
+        try {
+            setLoading(true);
+
+            // Filter out empty annotations
+            const filteredAnnotations = annotations.filter(frame =>
+                frame && (frame.drawings?.length > 0 || frame.comment)
+            );
+
+            await addAnnotation(videoId, {
+                coachId: userId,
+                data: filteredAnnotations,
+            }, token);
+
+            showAlert("Success", "All annotations have been saved successfully!");
+            await removeAnnotationsLocally(videoId);
+
+            // Don't try to access VideoPreviewSection state here
+        } catch (error) {
+            console.error("Failed to save annotations:", error);
+            showAlert("Error", "Failed to save annotations. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
-    if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
-    if (!video) return <Text style={{ flex: 1, textAlign: 'center', marginTop: 40 }}>Video not found.</Text>;
+    // Add this handler for exiting annotation mode without saving
+    const handleExitAnnotation = () => {
+        setAnnotationMode(false);
+    };
+
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
+
+    if (!video) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: 18, color: '#666' }}>Video not found.</Text>
+            </View>
+        );
+    }
+
+    // Use video.url if it's a full URL, or construct from fileName if needed
+    const videoUri = video.url && video.url.startsWith('http')
+        ? video.url
+        : `${API_URL}/uploads/${video.fileName}`;
 
     return (
-        <View style={styles.container} key={refreshKey}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/all-videos')}>
-                <Text style={styles.backText}>← Back to all Videos</Text>
-            </TouchableOpacity>
-            <Text style={styles.title}>{video.title || video._id}</Text>
-            <Video
-                ref={videoRef}
-                source={{ uri: video.url }}
-                style={styles.video}
-                useNativeControls
-                resizeMode="contain"
-                onReadyForDisplay={handleVideoReady}
-                onFullscreenUpdate={handleFullscreenUpdate}
+        <View style={{ flex: 1 }}>
+            <VideoPreviewSection
+                videoId={videoId}
+                onAnnotate={() => { }} // Empty function as we're handling annotation in the component
+                annotations={annotations}
+                setAnnotations={setAnnotations}
+                onSaveFinal={handleFinalSave} // Add this prop to VideoPreviewSection
             />
-            <Text style={styles.videoId}>Video ID: {video._id}</Text>
         </View>
     );
-}
+};
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff', paddingVertical: 16, paddingHorizontal: 0 },
-    backBtn: { marginBottom: 16 },
-    backText: { fontSize: 18, color: '#1976d2' },
-    title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
-    video: {
-        width: '100%',
-        aspectRatio: 16 / 9,
-        backgroundColor: '#000',
-        borderRadius: 8,
-        alignSelf: 'center',
-        maxWidth: 600, // optional
-    },
-    videoId: { marginTop: 16, textAlign: 'center', color: '#666' }
-});
+export default VideoReviewScreen;

@@ -21,6 +21,8 @@ import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'expo-router';
 import CustomHeader from '../components/CustomHeader';
+import { showAlert, showConfirm } from '../utils/alertMessage';
+
 
 const { width } = Dimensions.get('window');
 
@@ -46,7 +48,7 @@ export default function StudentList() {
             setMatchedStudents(Array.isArray(matchedRes.data) ? matchedRes.data : []);
             setUnmatchedStudents(Array.isArray(unmatchedRes.data) ? unmatchedRes.data : []);
         } catch {
-            Alert.alert('Error', 'Failed to fetch students');
+            showAlert('Error', 'Failed to fetch students');
         } finally {
             setLoading(false);
         }
@@ -70,38 +72,66 @@ export default function StudentList() {
             const res = await getStudentProfile(studentId);
             setProfileModal({ visible: true, student: res.data });
         } catch {
-            Alert.alert('Error', 'Failed to fetch student profile');
+            showAlert('Error', 'Failed to fetch student profile');
         }
     };
 
     const handleRequest = async (studentId) => {
         try {
             await requestCoach({ requesterId: coachId, targetId: studentId });
-            Alert.alert('Request Sent', 'Your request has been sent to the student.');
+            showAlert('Request Sent', 'Your request has been sent to the student.');
             await refreshStudentLists(coachId);
         } catch {
-            Alert.alert('Error', 'Could not send request.');
+            showAlert('Error', 'Could not send request.');
         }
     };
 
     const handleAcceptRequest = async (studentId) => {
         try {
             await handleUserRequest({ approverId: coachId, requesterId: studentId, action: 'approved', feedback: '' });
-            Alert.alert('Request Accepted', 'You have accepted the student request.');
+            showAlert('Request Accepted', 'You have accepted the student request.');
             await refreshStudentLists(coachId);
         } catch {
-            Alert.alert('Error', 'Could not accept request.');
+            showAlert('Error', 'Could not accept request.');
         }
     };
 
     const handleRejectRequest = async (studentId) => {
         try {
             await handleUserRequest({ approverId: coachId, requesterId: studentId, action: 'rejected', feedback: '' });
-            Alert.alert('Request Rejected', 'You have rejected the student request.');
+            showAlert('Request Rejected', 'You have rejected the student request.');
             await refreshStudentLists(coachId);
         } catch {
-            Alert.alert('Error', 'Could not reject request.');
+            showAlert('Error', 'Could not reject request.');
         }
+    };
+
+    const handleRemoveStudent = async (student, studentName) => {
+        showConfirm(
+            'Remove Student',
+            `Are you sure you want to remove ${studentName} from your approved students?`,
+            async () => {
+                try {
+                    const studentId = student._id || student.userId || student.id;
+
+                    await handleUserRequest({
+                        approverId: coachId,
+                        requesterId: studentId,
+                        action: 'removed',
+                        feedback: 'Removed by coach'
+                    });
+
+                    showAlert('Student Removed', `${studentName} has been removed from your approved students.`);
+                    await refreshStudentLists(coachId);
+                } catch (error) {
+                    console.error('Failed to remove student:', error);
+                    showAlert(
+                        'Error',
+                        `Could not remove student. ${error.response?.data?.message || error.message || 'Please try again.'}`
+                    );
+                }
+            }
+        );
     };
 
     const handleBackPress = () => {
@@ -166,6 +196,12 @@ export default function StudentList() {
                                 style={scheme === 'dark' ? styles.viewBtnDark : styles.viewBtnLight}
                             >
                                 <Text style={scheme === 'dark' ? styles.actionBtnTextDark : styles.actionBtnTextLight}>View</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => handleRemoveStudent(student, `${student.firstName} ${student.lastName}`)}
+                                style={scheme === 'dark' ? styles.removeBtnDark : styles.removeBtnLight}
+                            >
+                                <Text style={scheme === 'dark' ? styles.removeBtnTextDark : styles.removeBtnTextLight}>Remove</Text>
                             </TouchableOpacity>
                         </StudentCard>
                     ))
@@ -428,6 +464,38 @@ const styles = StyleSheet.create({
         marginLeft: 4,
         backgroundColor: 'transparent',
         borderColor: '#3b5998',
+    },
+
+    // Remove button styles
+    removeBtnLight: {
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        marginLeft: 4,
+        backgroundColor: 'transparent',
+        borderColor: '#d9534f',
+    },
+    removeBtnDark: {
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        marginLeft: 4,
+        backgroundColor: 'transparent',
+        borderColor: '#dc3545',
+    },
+
+    // Remove button text styles
+    removeBtnTextLight: {
+        fontSize: 16,
+        color: '#d9534f',
+        fontWeight: '600',
+    },
+    removeBtnTextDark: {
+        fontSize: 16,
+        color: '#dc3545',
+        fontWeight: '600',
     },
 
     // Action button text styles

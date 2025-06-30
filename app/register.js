@@ -140,7 +140,7 @@ export default function Register() {
                         <MaterialCommunityIcons
                             name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                             size={22}
-                            color="#1976d2"
+                            color="#000"
                         />
                     </TouchableOpacity>
                     {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
@@ -183,7 +183,7 @@ export default function Register() {
 const styles = StyleSheet.create({
     background: {
         flex: 1,
-        backgroundColor: '#f4f8fb',
+        backgroundColor: '#000',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 22,
         textAlign: 'center',
-        color: '#1976d2',
+        color: '#000',
         letterSpacing: 1,
     },
     inputWrapper: {
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     button: {
         marginTop: 10,
         width: '100%',
-        backgroundColor: '#1976d2',
+        backgroundColor: 'rgb(70 66 125)',
         padding: 15,
         borderRadius: 8,
         shadowColor: '#1976d2',
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
         marginTop: 18,
     },
     linkText: {
-        color: '#1976d2',
+        color: '#000',
         textAlign: 'center',
         fontWeight: '500',
         fontSize: 15,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     },
     roleButton: {
         borderWidth: 1,
-        borderColor: '#1976d2',
+        borderColor: '#000',
         borderRadius: 8,
         paddingVertical: 10,
         paddingHorizontal: 20,
@@ -277,16 +277,16 @@ const styles = StyleSheet.create({
     },
     roleButtonSelected: {
         borderWidth: 1,
-        borderColor: '#1976d2',
+        borderColor: '#000',
         borderRadius: 8,
         paddingVertical: 10,
         paddingHorizontal: 20,
         marginHorizontal: 5,
         marginTop: 10,
-        backgroundColor: '#1976d2',
+        backgroundColor: '#000',
     },
     roleButtonText: {
-        color: '#1976d2',
+        color: '#000',
         fontSize: 16,
         fontWeight: 'bold',
     },

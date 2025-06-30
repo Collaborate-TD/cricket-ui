@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { forgotPassword } from '../services/api';
 import { useRouter } from 'expo-router';
+import { showAlert } from '../utils/alertMessage';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -33,10 +34,10 @@ export default function ForgotPassword() {
             if (res.data.resetLink) {
                 setResetLink(res.data.resetLink);
                 setMessage(res.data.message || 'Reset link sent to your email!');
-                Alert.alert('Success', 'Reset link sent! Check your email.');
+                showAlert('Success', 'Reset link sent! Check your email.');
             } else {
                 setMessage(res.data.message || 'Failed to send reset link.');
-                Alert.alert('Success', res.data.message || 'Reset link sent!');
+                showAlert('Success', res.data.message || 'Reset link sent!');
             }
         } catch (err) {
             setError(
@@ -97,7 +98,7 @@ export default function ForgotPassword() {
 const styles = StyleSheet.create({
     background: {
         flex: 1,
-        backgroundColor: '#f4f8fb',
+        backgroundColor: '#000',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#1976d2',
+        color: '#000',
         marginBottom: 10,
         textAlign: 'center',
         letterSpacing: 0.5,
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
         color: '#222',
     },
     button: {
-        backgroundColor: '#1976d2',
+        backgroundColor: 'rgb(70 66 125)',
         paddingVertical: 15,
         borderRadius: 8,
         alignItems: 'center',
@@ -206,7 +207,7 @@ const styles = StyleSheet.create({
         borderRadius: 6,
     },
     linkText: {
-        color: '#1976d2',
+        color: '#000',
         fontSize: 16,
         fontWeight: '500',
     },

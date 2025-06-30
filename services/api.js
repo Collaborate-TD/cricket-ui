@@ -3,6 +3,9 @@ import { API_URL } from '@env';
 
 const API = axios.create({ baseURL: API_URL || 'http://127.0.0.1:5000' });
 
+// const API = axios.create({ baseURL: API_URL });
+// const BASE_URL = API_URL;
+
 export const register = (data) =>
     API.post("/auth/register", data);
 
@@ -53,8 +56,34 @@ export const uploadProfilePhotoAPI = (formData) =>
             'User-Agent': 'PostmanRuntime/7.41.1',
         },
     });
-export const toggleFavourite = (videoId, isFavourite) => {
-    return API.put(`/video/${videoId}`, { isFavourite });
+export const toggleFavourite = (videoId, params) => {
+    return API.put(`/video/${videoId}`, params);
 };
+export const uploadVideo = (formData) =>
+    API.post('/videos/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+// Use axios for annotations
+export const addAnnotation = (videoId, annotationData, token) =>
+    API.post(`/video-ann/${videoId}/annotations`, annotationData, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
 
+export const getAnnotations = (videoId, token) =>
+    API.get(`/video-ann/${videoId}/annotations`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+
+export const updateAnnotation = (videoId, annotationId, annotationData, token) =>
+    API.put(`/video-ann/${videoId}/annotations/${annotationId}`, annotationData, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+
+export const deleteAnnotation = (videoId, annotationId, token) =>
+    API.delete(`/video-ann/${videoId}/annotations/${annotationId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+
+export const deleteVideos = (videoIds, userId) =>
+    API.delete('/video/delete', { data: { ids: videoIds, userId } });
 export default API;
