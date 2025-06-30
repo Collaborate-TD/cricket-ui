@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, TextInput, Alert, Modal, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, TextInput, Modal, Dimensions, StyleSheet } from 'react-native';
 import { getStudentRequests, acceptStudentRequest, declineStudentRequest } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import jwtDecode from 'jwt-decode';  // fixed import (no curly braces)
 import { useRouter } from 'expo-router';
+import { showAlert } from '../utils/alertMessage';
 
 const { width } = Dimensions.get('window');
 
@@ -26,7 +27,7 @@ export default function StudentRequests() {
                 const res = await getStudentRequests(id);
                 setRequests(res.data);
             } catch (err) {
-                Alert.alert('Error', 'Failed to fetch student requests');
+                showAlert('Error', 'Failed to fetch student requests');
             } finally {
                 setLoading(false);
             }
@@ -38,15 +39,15 @@ export default function StudentRequests() {
         try {
             await acceptStudentRequest({ approverId: coachId, requesterId: studentId });
             setRequests(requests.filter(r => r.studentId !== studentId));
-            Alert.alert('Accepted', 'Student request accepted.');
+            showAlert('Accepted', 'Student request accepted.');
         } catch (err) {
-            Alert.alert('Error', 'Failed to accept request');
+            showAlert('Error', 'Failed to accept request');
         }
     };
 
     const handleDecline = async () => {
         if (!declineModal.requestId) {
-            Alert.alert('Error', 'Student ID is missing for this request.');
+            showAlert('Error', 'Student ID is missing for this request.');
             return;
         }
         try {
@@ -54,9 +55,9 @@ export default function StudentRequests() {
             setRequests(requests.filter(r => r.studentId !== declineModal.requestId));
             setFeedback('');
             setDeclineModal({ visible: false, requestId: null });
-            Alert.alert('Declined', 'Student request declined.');
+            showAlert('Declined', 'Student request declined.');
         } catch (err) {
-            Alert.alert('Error', 'Failed to decline request');
+            showAlert('Error', 'Failed to decline request');
         }
     };
 

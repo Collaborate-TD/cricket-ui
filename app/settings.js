@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Alert,
     ScrollView,
     useColorScheme,
 } from 'react-native';
@@ -19,6 +18,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import CustomHeader from '../components/CustomHeader';
 import { removeToken } from '../utils/tokenStorage';
+import { showAlert } from '../utils/alertMessage';
 
 export default function Settings() {
     const router = useRouter();
@@ -30,7 +30,7 @@ export default function Settings() {
     });
 
     const handleOptionPress = (option) => {
-        Alert.alert(option, `${option} screen not implemented yet.`);
+        showAlert(option, `${option} screen not implemented yet.`);
     };
 
     const handleBackPress = () => {
@@ -53,7 +53,7 @@ export default function Settings() {
             await removeToken();
             router.replace('/login');
         } catch (err) {
-            Alert.alert('Error', 'Failed to sign out. Please try again.');
+            showAlert('Error', 'Failed to sign out. Please try again.');
         }
     };
 

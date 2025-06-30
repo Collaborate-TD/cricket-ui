@@ -7,7 +7,6 @@ import {
     StyleSheet,
     useColorScheme,
     ScrollView,
-    Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getVideos, toggleFavourite, deleteVideos } from '../services/api';
@@ -22,6 +21,7 @@ import {
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import CustomHeader from '../components/CustomHeader';
+import { showAlert, showConfirm } from '../utils/alertMessage';
 
 export default function AllVideos() {
     const [videos, setVideos] = useState([]);
@@ -61,8 +61,9 @@ export default function AllVideos() {
                     video._id === videoId ? { ...video, isFavourite: newValue } : video
                 )
             );
-
-            await toggleFavourite(videoId, newValue);
+            const token = await getToken();
+            const user = jwtDecode(token);
+            await toggleFavourite(videoId, { isFavourite: newValue, userId: user._id || user.id });
         } catch (err) {
             console.error(err);
             // Optional: revert UI
@@ -112,27 +113,19 @@ export default function AllVideos() {
     const handleDeleteSelected = () => {
         if (selectedVideos.length === 0) return;
 
-        Alert.alert(
+        showConfirm(
             'Delete Videos',
             `Are you sure you want to delete ${selectedVideos.length} video(s)? This action cannot be undone.`,
-            [
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: deleteSelectedVideos,
-                },
-            ]
+            deleteSelectedVideos // onConfirm
         );
     };
 
     const deleteSelectedVideos = async () => {
         setDeleting(true);
         try {
-            await deleteVideos(selectedVideos);
+            const token = await getToken();
+            const user = jwtDecode(token);
+            await deleteVideos(selectedVideos, user._id || user.id);
 
             // Remove deleted videos from state
             setVideos(prev => prev.filter(video => !selectedVideos.includes(video._id)));
@@ -140,8 +133,8 @@ export default function AllVideos() {
             // Exit select mode
             exitSelectMode();
         } catch (err) {
-            console.error('Failed to delete videos:', err);
-            Alert.alert('Error', 'Failed to delete videos. Please try again.');
+            // console.error('Failed to delete videos:', err?.response?.data?.message || err);
+            showAlert('Error', err?.response?.data?.message || err.message || 'Failed to delete videos. Please try again.');
         } finally {
             setDeleting(false);
         }
@@ -238,7 +231,11 @@ export default function AllVideos() {
                     if (selectMode) {
                         exitSelectMode();
                     } else {
-                        router.replace(role === 'coach' ? '/coach' : '/student');
+                        if (router.canGoBack?.()) {
+                            router.back();
+                        } else {
+                            router.replace(role === 'coach' ? '/coach' : '/student');
+                        }
                     }
                 }}
             />
@@ -272,28 +269,30 @@ export default function AllVideos() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <TouchableOpacity
-                    onPress={() =>
-                        router.push(
-                            params.studentId
-                                ? `/record-video?studentId=${params.studentId}`
-                                : '/record-video'
-                        )
-                    }
-                    activeOpacity={0.8}
-                    style={styles.newRecordingContainer}
-                    disabled={selectMode}
-                >
-                    <LinearGradient
-                        colors={selectMode ? ['#ccc', '#999'] : ['#8ab4f8', '#1976d2']}
-                        style={styles.newRecording}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
+                {(params.studentId || params.coachId) && (
+                    <TouchableOpacity
+                        onPress={() =>
+                            router.push(
+                                params.studentId
+                                    ? `/record-video?studentId=${params.studentId}`
+                                    : `/record-video?coachId=${params.coachId}`
+                            )
+                        }
+                        activeOpacity={0.8}
+                        style={styles.newRecordingContainer}
+                        disabled={selectMode}
                     >
-                        <Text style={styles.recordIcon}>🎥</Text>
-                        <Text style={styles.recordText}>New Recording</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
+                        <LinearGradient
+                            colors={selectMode ? ['#ccc', '#999'] : ['#8ab4f8', '#1976d2']}
+                            style={styles.newRecording}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                        >
+                            <Text style={styles.recordIcon}>🎥</Text>
+                            <Text style={styles.recordText}>New Recording</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                )}
 
                 <View style={styles.grid}>
                     {videos.length === 0 ? (

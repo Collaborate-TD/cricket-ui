@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { resetPassword } from '../services/api';
+import { showAlert } from '../utils/alertMessage';
 
 function validatePassword(password) {
     // At least 6 chars, one number, one special char
@@ -38,7 +39,7 @@ export default function ResetPassword() {
         setLoading(true);
         try {
             await resetPassword({ token, password });
-            Alert.alert('Success', 'Password updated successfully!');
+            showAlert('Success', 'Password updated successfully!');
             router.replace('/login');
         } catch (err) {
             setError(

@@ -20,6 +20,7 @@ import {
     Poppins_600SemiBold,
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
+import { showAlert } from '../utils/alertMessage';
 
 export default function CoachList() {
     const [coaches, setCoaches] = useState([]);
@@ -43,7 +44,7 @@ export default function CoachList() {
             setCoaches(Array.isArray(coachRes.data) ? coachRes.data : []);
             setMyRequests(Array.isArray(requestsRes.data) ? requestsRes.data : []);
         } catch (err) {
-            Alert.alert('Error', 'Failed to fetch coaches.');
+            showAlert('Error', 'Failed to fetch coaches.');
         }
     };
 
@@ -62,10 +63,10 @@ export default function CoachList() {
     const handleRequest = async (coachId) => {
         try {
             await requestCoach({ requesterId: studentId, targetId: coachId });
-            Alert.alert('Request Sent', 'Your request has been sent to the coach.');
+            showAlert('Request Sent', 'Your request has been sent to the coach.');
             await refreshCoachLists(studentId);
         } catch (err) {
-            Alert.alert('Error', 'Could not send request.');
+            showAlert('Error', 'Could not send request.');
         }
     };
 
@@ -77,10 +78,10 @@ export default function CoachList() {
                 action: 'approved',
                 feedback: 'Request accepted.',
             });
-            Alert.alert('Request Accepted', 'You have accepted the coach request.');
+            showAlert('Request Accepted', 'You have accepted the coach request.');
             await refreshCoachLists(studentId);
         } catch (err) {
-            Alert.alert('Error', 'Could not accept request.');
+            showAlert('Error', 'Could not accept request.');
         }
     };
 
@@ -92,10 +93,10 @@ export default function CoachList() {
                 action: 'rejected',
                 feedback: 'Your request has been rejected.',
             });
-            Alert.alert('Request Rejected', 'You have rejected the coach request.');
+            showAlert('Request Rejected', 'You have rejected the coach request.');
             await refreshCoachLists(studentId);
         } catch (err) {
-            Alert.alert('Error', 'Could not reject request.');
+            showAlert('Error', 'Could not reject request.');
         }
     };
 
@@ -105,7 +106,7 @@ export default function CoachList() {
             const res = await getStudentProfile(coachId); // Or getCoachProfile if available
             setProfileModal({ visible: true, coach: res.data });
         } catch {
-            Alert.alert('Error', 'Failed to fetch coach profile.');
+            showAlert('Error', 'Failed to fetch coach profile.');
         }
     };
 
@@ -259,7 +260,7 @@ export default function CoachList() {
                                     style={styles.feedbackBtn}
                                     onPress={() => router.push(`/all-videos?coachId=${profileModal.coach._id}`)}
                                 >
-                                    <Text style={styles.feedbackBtnText}>View Feedbacks</Text>
+                                    <Text style={styles.feedbackBtnText}>View Videos</Text>
                                 </TouchableOpacity>
                             </>
                         )}
