@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { forgotPassword } from '../services/api';
 import { useRouter } from 'expo-router';
+import { showAlert } from '../utils/alertMessage';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -33,10 +34,10 @@ export default function ForgotPassword() {
             if (res.data.resetLink) {
                 setResetLink(res.data.resetLink);
                 setMessage(res.data.message || 'Reset link sent to your email!');
-                Alert.alert('Success', 'Reset link sent! Check your email.');
+                showAlert('Success', 'Reset link sent! Check your email.');
             } else {
                 setMessage(res.data.message || 'Failed to send reset link.');
-                Alert.alert('Success', res.data.message || 'Reset link sent!');
+                showAlert('Success', res.data.message || 'Reset link sent!');
             }
         } catch (err) {
             setError(

@@ -4,8 +4,6 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    Alert,
-    ActivityIndicator,
 } from 'react-native';
 import { useCameraPermissions, useMicrophonePermissions, CameraView } from 'expo-camera';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -13,6 +11,7 @@ import * as FileSystem from 'expo-file-system';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { uploadCaptureVideo } from '../services/api';
+import { showAlert } from '../utils/alertMessage';
 
 export default function RecordVideoScreen() {
     const cameraRef = useRef(null);
@@ -46,23 +45,23 @@ export default function RecordVideoScreen() {
             const token = await getToken();
             const user = jwtDecode(token);
 
-            let userId = params.studentId || user._id || user.id;
-            formData.append('userId', userId);
-            formData.append('username', user.username || user.email);
+            // Always use params.studentId and params.coachId if present, otherwise fallback to user._id
+            const studentId = params.studentId || user._id || user.id;
+            const coachId = params.coachId || user._id || user.id;
 
-            if (params.studentId) formData.append('studentId', params.studentId);
-
+            formData.append('studentId', studentId);
+            formData.append('coachId', coachId);
 
             const response = await uploadCaptureVideo(formData);
             if (response.status !== 201) {
                 throw new Error(`Upload failed with status ${response.status}`);
             }
 
-            Alert.alert('Success', 'Video uploaded successfully!');
+            showAlert('Success', 'Video uploaded successfully!');
             router.replace('/all-videos');
         } catch (err) {
             console.error(err);
-            Alert.alert('Error', 'Failed to upload video.');
+            showAlert('Error', 'Failed to upload video.');
         }
     };
 
@@ -81,7 +80,7 @@ export default function RecordVideoScreen() {
             await uploadVideo(video.uri);
         } catch (err) {
             console.error('Recording error:', err);
-            Alert.alert('Error', err.message || 'Recording failed');
+            showAlert('Error', err.message || 'Recording failed');
         } finally {
             setRecording(false);
             setLoading(false);

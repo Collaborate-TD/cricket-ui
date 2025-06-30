@@ -7,7 +7,6 @@ import {
     StyleSheet,
     useColorScheme,
     ScrollView,
-    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getVideos, toggleFavourite, deleteVideos } from '../services/api';
@@ -21,6 +20,7 @@ import {
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import CustomHeader from '../components/CustomHeader';
+import { showConfirm, showAlert } from '../utils/alertMessage';
 
 export default function Favourites() {
     const [videos, setVideos] = useState([]);
@@ -67,7 +67,9 @@ export default function Favourites() {
     // Toggle favorite (unfavorite) — remove from local list after success
     const toggleFavorite = async (videoId) => {
         try {
-            await toggleFavourite(videoId, false); // unfavorite on backend
+            const token = await getToken();
+            const user = jwtDecode(token);
+            await toggleFavourite(videoId, { isFavourite: false, userId: user._id || user.id });
 
             // Remove video from local list to update UI immediately
             setVideos((prev) => prev.filter((video) => video._id !== videoId));
@@ -114,28 +116,19 @@ export default function Favourites() {
     const handleDeleteSelected = () => {
         if (selectedVideos.length === 0) return;
 
-        Alert.alert(
+        showConfirm(
             'Delete Videos',
             `Are you sure you want to delete ${selectedVideos.length} video(s)? This action cannot be undone and will remove them from all videos as well.`,
-            [
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: deleteSelectedVideos,
-                },
-            ]
+            deleteSelectedVideos // onConfirm
         );
     };
 
     const deleteSelectedVideos = async () => {
         setDeleting(true);
         try {
-            // Call API to permanently delete videos from the system
-            await deleteVideos(selectedVideos);
+            const token = await getToken();
+            const user = jwtDecode(token);
+            await deleteVideos(selectedVideos, user._id || user.id);
 
             // Remove deleted videos from local state
             setVideos(prev => prev.filter(video => !selectedVideos.includes(video._id)));
@@ -143,8 +136,8 @@ export default function Favourites() {
             // Exit select mode
             exitSelectMode();
         } catch (err) {
-            console.error('Failed to delete videos:', err);
-            Alert.alert('Error', 'Failed to delete videos. Please try again.');
+            // console.error('Failed to delete videos:', err?.response?.data?.message || err);
+            showAlert('Error', err?.response?.data?.message || err.message || 'Failed to delete videos. Please try again.');
         } finally {
             setDeleting(false);
         }

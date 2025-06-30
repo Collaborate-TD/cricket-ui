@@ -7,7 +7,6 @@ import {
     StyleSheet,
     useColorScheme,
     ScrollView,
-    Alert,
     TextInput,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -24,6 +23,7 @@ import {
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import CustomHeader from '../components/CustomHeader';
+import { showConfirm, showAlert } from '../utils/alertMessage';
 
 export default function Drills() {
     const [drills, setDrills] = useState([]);
@@ -110,20 +110,10 @@ export default function Drills() {
     const handleDeleteSelected = () => {
         if (selectedDrills.length === 0) return;
 
-        Alert.alert(
+        showConfirm(
             'Delete Drills',
             `Are you sure you want to delete ${selectedDrills.length} drill(s)? This action cannot be undone.`,
-            [
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: deleteSelectedDrills,
-                },
-            ]
+            deleteSelectedDrills // onConfirm
         );
     };
 
@@ -132,12 +122,12 @@ export default function Drills() {
         try {
             console.log('Deleting drills:', selectedDrills);
             await deleteDrills(selectedDrills);
-            
+
             setDrills(prev => prev.filter(drill => !selectedDrills.includes(drill._id)));
             exitSelectMode();
         } catch (err) {
             console.error('Failed to delete drills:', err);
-            Alert.alert('Error', 'Failed to delete drills. Please try again.');
+            showAlert('Error', 'Failed to delete drills. Please try again.');
         } finally {
             setDeleting(false);
         }
@@ -155,18 +145,18 @@ export default function Drills() {
             }
         } catch (err) {
             console.error('Error picking video:', err);
-            Alert.alert('Error', 'Failed to pick video. Please try again.');
+            showAlert('Error', 'Failed to pick video. Please try again.');
         }
     };
 
     const handleUploadDrill = async () => {
         if (!drillTitle.trim()) {
-            Alert.alert('Error', 'Please enter a drill title.');
+            showAlert('Error', 'Please enter a drill title.');
             return;
         }
 
         if (!selectedVideo) {
-            Alert.alert('Error', 'Please select a video file.');
+            showAlert('Error', 'Please select a video file.');
             return;
         }
 
@@ -196,10 +186,10 @@ export default function Drills() {
             // Refresh drills list
             fetchDrills();
 
-            Alert.alert('Success', 'Drill uploaded successfully!');
+            showAlert('Success', 'Drill uploaded successfully!');
         } catch (err) {
             console.error('Failed to upload drill:', err);
-            Alert.alert('Error', 'Failed to upload drill. Please try again.');
+            showAlert('Error', 'Failed to upload drill. Please try again.');
         } finally {
             setUploading(false);
         }
@@ -233,7 +223,7 @@ export default function Drills() {
 
     const renderItem = (item) => {
         const isSelected = selectedDrills.includes(item._id);
-        
+
         return (
             <TouchableOpacity
                 key={item._id}
@@ -345,7 +335,7 @@ export default function Drills() {
                         <Text style={scheme === 'dark' ? styles.formTitleDark : styles.formTitle}>
                             Upload New Drill
                         </Text>
-                        
+
                         <TextInput
                             style={scheme === 'dark' ? styles.inputDark : styles.input}
                             placeholder="Drill Title"
@@ -353,7 +343,7 @@ export default function Drills() {
                             value={drillTitle}
                             onChangeText={setDrillTitle}
                         />
-                        
+
                         <TextInput
                             style={[scheme === 'dark' ? styles.inputDark : styles.input, styles.textArea]}
                             placeholder="Drill Description (Optional)"
@@ -363,7 +353,7 @@ export default function Drills() {
                             multiline
                             numberOfLines={3}
                         />
-                        
+
                         <TouchableOpacity
                             style={styles.videoPickerButton}
                             onPress={pickVideo}
@@ -373,7 +363,7 @@ export default function Drills() {
                                 {selectedVideo ? `Selected: ${selectedVideo.name}` : '📹 Select Video'}
                             </Text>
                         </TouchableOpacity>
-                        
+
                         <View style={styles.formButtons}>
                             <TouchableOpacity
                                 style={styles.cancelButton}
@@ -387,7 +377,7 @@ export default function Drills() {
                             >
                                 <Text style={styles.cancelButtonText}>Cancel</Text>
                             </TouchableOpacity>
-                            
+
                             <TouchableOpacity
                                 style={[styles.uploadButton, (!drillTitle.trim() || !selectedVideo) && styles.uploadButtonDisabled]}
                                 onPress={handleUploadDrill}
