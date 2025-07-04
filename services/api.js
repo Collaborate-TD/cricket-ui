@@ -65,24 +65,24 @@ export const uploadVideo = (formData) =>
     });
 // Use axios for annotations
 export const addAnnotation = (videoId, annotationData, token) =>
-    API.post(`/video-ann/${videoId}/annotations`, annotationData, {
+    API.post(`/video-ann/${videoId}/add`, annotationData, {
         headers: { Authorization: `Bearer ${token}` }
     });
 
 export const getAnnotations = (videoId, token) =>
-    API.get(`/video-ann/${videoId}/annotations`, {
+    API.get(`/video-ann/${videoId}/fetch`, {
         headers: { Authorization: `Bearer ${token}` }
     });
 
-export const updateAnnotation = (videoId, annotationId, annotationData, token) =>
-    API.put(`/video-ann/${videoId}/annotations/${annotationId}`, annotationData, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
+// export const updateAnnotation = (videoId, annotationId, annotationData, token) =>
+//     API.put(`/video-ann/${videoId}/annotations/${annotationId}`, annotationData, {
+//         headers: { Authorization: `Bearer ${token}` }
+//     });
 
-export const deleteAnnotation = (videoId, annotationId, token) =>
-    API.delete(`/video-ann/${videoId}/annotations/${annotationId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
+// export const deleteAnnotation = (videoId, annotationId, token) =>
+//     API.delete(`/video-ann/${videoId}/annotations/${annotationId}`, {
+//         headers: { Authorization: `Bearer ${token}` }
+//     });
 
 export const deleteVideos = (videoIds, userId) =>
     API.delete('/video/delete', { data: { ids: videoIds, userId } });
