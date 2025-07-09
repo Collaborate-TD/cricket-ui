@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.27.0",
     "@expo-google-fonts/poppins": "^0.4.0",
     "@expo/metro-runtime": "~5.0.4",
     "@react-native-async-storage/async-storage": "^2.1.2",
@@ -20,6 +21,7 @@
     "expo": "~53.0.9",
     "expo-av": "~15.1.5",
     "expo-camera": "~16.1.8",
+    "expo-document-picker": "~13.1.6",
     "expo-font": "~13.3.1",
     "expo-image-picker": "~16.1.4",
     "expo-linear-gradient": "~14.1.5",
@@ -38,8 +40,7 @@
     "react-native-svg": "15.11.2",
     "react-native-video": "^6.14.1",
     "react-native-web": "^0.20.0",
-    "react-webcam": "^7.2.0",
-    "expo-document-picker": "~13.1.6"
+    "react-webcam": "^7.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
