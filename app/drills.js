@@ -24,6 +24,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import CustomHeader from '../components/CustomHeader';
 import { showConfirm, showAlert } from '../utils/alertMessage';
+import { uploadDrillVideo } from '../utils/fileUpload';
 
 export default function Drills() {
     const [drills, setDrills] = useState([]);
@@ -37,6 +38,7 @@ export default function Drills() {
     const [drillTitle, setDrillTitle] = useState('');
     const [drillDescription, setDrillDescription] = useState('');
     const [selectedVideo, setSelectedVideo] = useState(null);
+    const [userId, setUserId] = useState(null);
     const router = useRouter();
     const params = useLocalSearchParams();
     const scheme = useColorScheme();
@@ -48,12 +50,13 @@ export default function Drills() {
     });
 
     useEffect(() => {
-        const getRole = async () => {
+        const getRoleAndUserId = async () => {
             const token = await getToken();
             const user = jwtDecode(token);
             setRole(user.role || 'student');
+            setUserId(user.id || user._id); // <-- set userId here
         };
-        getRole();
+        getRoleAndUserId();
     }, []);
 
     const handleDrillLongPress = (item) => {
@@ -96,7 +99,7 @@ export default function Drills() {
         setDeleting(true);
         try {
             console.log('Deleting drills:', selectedDrills);
-            await deleteDrills(selectedDrills);
+            await deleteDrills(selectedDrills, userId);
 
             setDrills(prev => prev.filter(drill => !selectedDrills.includes(drill._id)));
             exitSelectMode();
@@ -137,20 +140,28 @@ export default function Drills() {
 
         setUploading(true);
         try {
-            const formData = new FormData();
-            formData.append('title', drillTitle.trim());
-            formData.append('description', drillDescription.trim());
-            formData.append('video', {
-                uri: selectedVideo.uri,
-                type: selectedVideo.mimeType || 'video/mp4',
-                name: selectedVideo.name || 'drill_video.mp4',
-            });
-
             const token = await getToken();
             const user = jwtDecode(token);
-            formData.append('uploaderId', user.id || user._id);
+            const userId = user.id || user._id;
 
-            await uploadDrill(formData);
+            // 1. Upload the video file to temp folder
+            let uploadedVideo = null;
+            if (selectedVideo) {
+                const uploadedData = await uploadDrillVideo(selectedVideo); // Should return { fileName: ... }
+                console.log('Uploaded video data:', uploadedData);
+                uploadedVideo = uploadedData.fileName || {};
+            }
+
+            // 2. Prepare drill data with uploaded video filename
+            const drillData = {
+                title: drillTitle.trim(),
+                description: drillDescription.trim(),
+                fileName: uploadedVideo ? uploadedVideo.fileName : '', // or whatever your API returns
+                userId: userId,
+            };
+
+            // 3. Submit drill data to main API
+            await createDrill(drillData);
 
             // Reset form
             setDrillTitle('');
@@ -176,12 +187,12 @@ export default function Drills() {
             const token = await getToken();
             const user = jwtDecode(token);
             const filter = {
-                ...(params.studentId && { studentId: params.studentId }),
-                ...(params.coachId && { coachId: params.coachId }),
+                // ...(params.studentId && { studentId: params.studentId }),
+                // ...(params.coachId && { coachId: params.coachId }),
                 userId: user.id || user._id,
             };
             const res = await getDrills(filter);
-            setDrills(res.data.list || []);
+            setDrills(res.data || []);
         } catch (err) {
             console.error('Failed to fetch drills:', err);
             setDrills([]);
