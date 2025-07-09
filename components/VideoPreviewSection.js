@@ -13,14 +13,19 @@ import FrameNavigation from './FrameNavigation';
 
 const { width, height } = Dimensions.get('window');
 
-export default function VideoPreviewSection({ videoId, onAnnotate, annotations, setAnnotations, onSaveFinal }) {
+export default function VideoPreviewSection({
+    videoId,
+    onAnnotate,
+    annotations,
+    setAnnotations,
+    onSaveFinal,
+}) {
     const [video, setVideo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [customFullscreen, setCustomFullscreen] = useState(false);
     const [isCoach, setIsCoach] = useState(false);
     const [showAnnotationOverlay, setShowAnnotationOverlay] = useState(false);
-    const [currentSecond, setCurrentSecond] = useState(0);
-    const [totalSeconds, setTotalSeconds] = useState(1);
+    const [totalSeconds, setTotalSeconds] = useState(5);
     const [selectedTool, setSelectedTool] = useState('freehand');
     const [selectedColor, setSelectedColor] = useState('#FF0000');
     const [selectedThickness, setSelectedThickness] = useState(4);
@@ -30,6 +35,8 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
 
     const videoRef = useRef(null);
     const router = useRouter();
+    const currentSecondRef = useRef(0);
+    const [, forceUpdate] = useState(0); // for manual re-render
 
     useEffect(() => {
         const fetchVideo = async () => {
@@ -75,22 +82,24 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
     // FIX: Load comment after currentSecond updates
     useEffect(() => {
         if (videoRef.current) {
-            videoRef.current.setStatusAsync({ positionMillis: currentSecond * 1000, shouldPlay: false });
+            videoRef.current.setStatusAsync({ positionMillis: currentSecondRef.current * 1000, shouldPlay: false });
         }
-
-        // Load comment for current frame
-        const frameData = annotations[currentSecond];
+        const frameData = annotations[currentSecondRef.current];
         if (frameData) {
             setComment(frameData.comment || '');
         } else {
             setComment('');
         }
-    }, [currentSecond, annotations]);
+    }, [annotations, forceUpdate]);
 
     // Save current frame annotation
     const handleSave = () => {
         setAnnotations(prev => {
-            const updated = [...prev];
+            const updated = { ...prev };
+            const currentSecond = currentSecondRef.current;
+            if (!updated[currentSecond]) {
+                updated[currentSecond] = { drawings: [], comment: '' };
+            }
             updated[currentSecond] = {
                 ...updated[currentSecond],
                 drawings: updated[currentSecond]?.drawings || [],
@@ -98,30 +107,25 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
             };
             return updated;
         });
-
         setHasSavedFrames(true);
     };
 
     // FIX: Correctly handle annotation changes
     const handleAnnotationChange = (second, newFrameData) => {
         setAnnotations(prev => {
-            const updated = [...prev];
-
-            // Make sure there's an object for this second
+            const updated = { ...prev };
+            // Ensure the frame exists
             if (!updated[second]) {
                 updated[second] = { drawings: [], comment: '' };
             }
-
-            // Update with new data
+            // Merge new data, keep comment in sync
             updated[second] = {
                 ...updated[second],
-                ...newFrameData,
+                drawings: newFrameData.drawings.concat(updated[second].drawings),
                 comment: comment,
             };
-
             return updated;
         });
-
         setHasSavedFrames(true);
     };
 
@@ -138,7 +142,8 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
 
             if (hasAnnotation) {
                 videoRef.current.pauseAsync();
-                setCurrentSecond(currentPos);
+                currentSecondRef.current = currentPos;
+                forceUpdate(n => n + 1);
                 setShowAnnotationOverlay(true);
             }
         }
@@ -146,35 +151,27 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
 
     // FIX: Frame navigation function
     const handleFrameChange = (second) => {
-        // First save current frame
-        const updatedAnnotations = [...annotations];
-
-        // Make sure we have an object for the current second
-        if (!updatedAnnotations[currentSecond]) {
-            updatedAnnotations[currentSecond] = { drawings: [], comment: '' };
-        }
-
-        // Update the current frame's data
-        updatedAnnotations[currentSecond] = {
-            ...updatedAnnotations[currentSecond],
-            drawings: updatedAnnotations[currentSecond].drawings || [],
-            comment: comment,
-        };
-
-        // Update annotations state
-        setAnnotations(updatedAnnotations);
-
-        // Now it's safe to change seconds
-        setCurrentSecond(second);
-
-        // Update video position
+        setAnnotations(prev => {
+            const updated = { ...prev };
+            const currentSecond = currentSecondRef.current;
+            if (!updated[currentSecond]) {
+                updated[currentSecond] = { drawings: [], comment: '' };
+            }
+            updated[currentSecond] = {
+                ...updated[currentSecond],
+                drawings: updated[currentSecond].drawings || [],
+                comment: comment,
+            };
+            return updated;
+        });
+        currentSecondRef.current = second;
+        forceUpdate(n => n + 1);
         if (videoRef.current) {
             videoRef.current.setStatusAsync({
                 positionMillis: second * 1000,
                 shouldPlay: false
             });
         }
-
         setHasSavedFrames(true);
     };
 
@@ -210,22 +207,28 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                                 ]}
                                 onPress={() => {
                                     // Save current frame first
-                                    const updatedAnnotations = [...annotations];
-                                    updatedAnnotations[currentSecond] = {
-                                        ...updatedAnnotations[currentSecond],
-                                        drawings: updatedAnnotations[currentSecond]?.drawings || [],
-                                        comment: comment,
-                                    };
-                                    setAnnotations(updatedAnnotations);
-
+                                    setAnnotations(prev => {
+                                        const updated = { ...prev };
+                                        const sec = currentSecondRef.current;
+                                        if (!updated[sec]) {
+                                            updated[sec] = { drawings: [], comment: '' };
+                                        }
+                                        updated[sec] = {
+                                            ...updated[sec],
+                                            drawings: updated[sec]?.drawings || [],
+                                            comment: comment,
+                                        };
+                                        return updated;
+                                    });
+                                    console.log("Saving annotations:", annotations);
                                     // Then save all annotations
-                                    if (onSaveFinal) onSaveFinal(updatedAnnotations);
+                                    if (onSaveFinal) onSaveFinal(annotations);
                                     setShowAnnotationOverlay(false);
                                     setHasSavedFrames(false);
                                     Alert.alert("Success", "All annotations saved successfully!");
                                 }}
                             >
-                                <Text style={styles.annotateBtnText}>Save All Annotations</Text>
+                                <Text style={styles.annotateBtnText}>Save Annotation</Text>
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity
@@ -235,7 +238,8 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                                         try {
                                             const status = await videoRef.current.getStatusAsync();
                                             const currentPos = Math.floor(status.positionMillis / 1000);
-                                            setCurrentSecond(currentPos);
+                                            currentSecondRef.current = currentPos;
+                                            forceUpdate(n => n + 1);
                                             await videoRef.current.setStatusAsync({ shouldPlay: false });
                                             setShowAnnotationOverlay(true);
                                         } catch (error) {
@@ -267,24 +271,29 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                         >
                             <View style={styles.frameNavigationContainer}>
                                 <Text style={styles.frameInfo}>
-                                    Frame {currentSecond + 1} of {Math.min(totalSeconds, 5)} ({currentSecond + 1}s)
+                                    Frame {currentSecondRef.current + 1} of {Math.min(totalSeconds, 5)} ({currentSecondRef.current + 1}s)
                                 </Text>
-
                                 <FrameNavigation
-                                    totalFrames={Math.min(totalSeconds, 5)}
-                                    currentFrame={currentSecond}
+                                    totalFrames={totalSeconds}
+                                    currentFrame={currentSecondRef.current}
                                     onFrameChange={handleFrameChange}
-                                    annotatedFrames={annotations
-                                        .map((frame, index) =>
-                                            frame && (frame.drawings?.length > 0 || frame.comment) ? index : null)
-                                        .filter(index => index !== null)}
+                                    annotatedFrames={Object.entries(annotations)
+                                        .filter(
+                                            ([, frame]) =>
+                                                frame && (
+                                                    (Array.isArray(frame.drawings) && frame.drawings.length > 0) ||
+                                                    !!frame.comment
+                                                )
+                                        )
+                                        .map(([second]) => Number(second))
+                                    }
                                 />
                             </View>
 
                             <AnnotationCanvas
-                                frame={currentSecond}
-                                frameData={annotations[currentSecond] || { drawings: [] }}
-                                onChange={(newFrameData) => handleAnnotationChange(currentSecond, newFrameData)}
+                                frame={currentSecondRef.current}
+                                frameData={annotations[currentSecondRef.current] || { drawings: [] }}
+                                onChange={(newFrameData) => handleAnnotationChange(currentSecondRef.current, newFrameData)}
                                 selectedTool={selectedTool}
                                 selectedColor={selectedColor}
                                 selectedThickness={selectedThickness}
@@ -321,7 +330,8 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                                 onSave={(text) => {
                                     setComment(text);
                                     setAnnotations((prev) => {
-                                        const updated = [...prev];
+                                        const updated = { ...prev };
+                                        const currentSecond = currentSecondRef.current;
                                         if (!updated[currentSecond]) {
                                             updated[currentSecond] = { drawings: [], comment: '' };
                                         }
@@ -351,10 +361,8 @@ export default function VideoPreviewSection({ videoId, onAnnotate, annotations, 
                     <Text style={styles.videoId}>Video ID: {video?._id}</Text>
                 </View>
             )}
-            {/* <TouchableOpacity style={styles.continueBtn} onPress={() => router.push('/nextPage')}>
-                <Text style={styles.continueBtnText}>NIGGESH</Text>
-            </TouchableOpacity> */}
-        </View>
+
+        </View >
     );
 }
 

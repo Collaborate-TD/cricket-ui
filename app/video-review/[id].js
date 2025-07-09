@@ -20,7 +20,7 @@ const VideoReviewScreen = ({ userId, token }) => {
     const router = useRouter();
     const [video, setVideo] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [annotations, setAnnotations] = useState([]);
+    const [annotations, setAnnotations] = useState({});
     const [annotationMode, setAnnotationMode] = useState(false);
 
     // Load video and annotations on mount
@@ -37,7 +37,8 @@ const VideoReviewScreen = ({ userId, token }) => {
                 setVideo(found);
 
                 const remote = await getAnnotations(videoId, token);
-                setAnnotations(remote?.length ? remote[0].data : []);
+                console.log("Remote annotations:", remote);
+                setAnnotations(remote?.length ? remote[0].data : {});
             } catch (e) {
                 setVideo(null);
                 showAlert('Error', 'Failed to load video or annotations.');
@@ -76,15 +77,20 @@ const VideoReviewScreen = ({ userId, token }) => {
         try {
             setLoading(true);
 
-            // Filter out empty annotations
-            const filteredAnnotations = annotations.filter(frame =>
-                frame && (frame.drawings?.length > 0 || frame.comment)
-            );
-
-            await addAnnotation(videoId, {
+            // // Filter out empty annotations
+            // const filteredAnnotations = annotations.filter(frame =>
+            //     frame && (frame.drawings?.length > 0 || frame.comment)
+            // );
+            const token = await getToken();
+            const user = jwtDecode(token);
+            const userId = user.id || user._id;
+            const body = {
                 coachId: userId,
-                data: filteredAnnotations,
-            }, token);
+                data: annotations,
+            }
+
+            console.log("Final annotations to save:", body);
+            await addAnnotation(videoId, body, token);
 
             showAlert("Success", "All annotations have been saved successfully!");
             await removeAnnotationsLocally(videoId);
