@@ -20,7 +20,7 @@ import {
     Poppins_600SemiBold,
     Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
-import { showAlert } from '../utils/alertMessage';
+import { showAlert, showConfirm } from '../utils/alertMessage';
 
 export default function CoachList() {
     const [coaches, setCoaches] = useState([]);
@@ -100,6 +100,34 @@ export default function CoachList() {
         }
     };
 
+    const handleRemoveCoach = async (coach, coachName) => {
+        showConfirm(
+            'Remove Coach',
+            `Are you sure you want to remove ${coachName} from your approved coaches?`,
+            async () => {
+                try {
+                    const coachId = coach._id || coach.userId || coach.id;
+
+                    await handleUserRequest({
+                        approverId: studentId,
+                        requesterId: coachId,
+                        action: 'removed',
+                        feedback: 'Removed by student'
+                    });
+
+                    showAlert('Coach Removed', `${coachName} has been removed from your approved coaches.`);
+                    await refreshCoachLists(studentId);
+                } catch (error) {
+                    console.error('Failed to remove coach:', error);
+                    showAlert(
+                        'Error',
+                        `Could not remove coach. ${error.response?.data?.message || error.message || 'Please try again.'}`
+                    );
+                }
+            }
+        );
+    };
+
     const handleViewProfile = async (coachId) => {
         try {
             // You may need to create a getCoachProfile API similar to getStudentProfile
@@ -170,12 +198,12 @@ export default function CoachList() {
                             >
                                 <Text style={scheme === 'dark' ? styles.actionBtnTextDark : styles.actionBtnTextLight}>View</Text>
                             </TouchableOpacity>
-                            {/* <TouchableOpacity
-                                onPress={() => router.push(`/chat/${coach._id}`)}
-                                style={scheme === 'dark' ? styles.messageBtnDark : styles.messageBtnLight}
+                            <TouchableOpacity
+                                onPress={() => handleRemoveCoach(coach, `${coach.firstName} ${coach.lastName}`)}
+                                style={scheme === 'dark' ? styles.removeBtnDark : styles.removeBtnLight}
                             >
-                                <Text style={scheme === 'dark' ? styles.actionBtnTextDark : styles.actionBtnTextLight}>Message</Text>
-                            </TouchableOpacity> */}
+                                <Text style={scheme === 'dark' ? styles.removeBtnTextDark : styles.removeBtnTextLight}>Remove</Text>
+                            </TouchableOpacity>
                         </CoachCard>
                     ))
                 )}
@@ -445,23 +473,37 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
         borderColor: '#3b5998',
     },
-    messageBtnLight: {
+
+    // Remove button styles
+    removeBtnLight: {
         paddingHorizontal: 14,
         paddingVertical: 7,
         borderRadius: 8,
         borderWidth: 1.5,
         marginLeft: 4,
         backgroundColor: 'transparent',
-        borderColor: '#1976d2',
+        borderColor: '#d9534f',
     },
-    messageBtnDark: {
+    removeBtnDark: {
         paddingHorizontal: 14,
         paddingVertical: 7,
         borderRadius: 8,
         borderWidth: 1.5,
         marginLeft: 4,
         backgroundColor: 'transparent',
-        borderColor: '#3b5998',
+        borderColor: '#dc3545',
+    },
+
+    // Remove button text styles
+    removeBtnTextLight: {
+        fontSize: 16,
+        color: '#d9534f',
+        fontFamily: 'Poppins_600SemiBold',
+    },
+    removeBtnTextDark: {
+        fontSize: 16,
+        color: '#dc3545',
+        fontFamily: 'Poppins_600SemiBold',
     },
 
     // Action button text styles

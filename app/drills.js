@@ -10,7 +10,7 @@ import {
     TextInput,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getDrills, toggleFavourite, deleteDrills, createDrill } from '../services/api';
+import { getDrills, deleteDrills, uploadDrill } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { Video } from 'expo-av';
@@ -58,31 +58,6 @@ export default function Drills() {
         };
         getRoleAndUserId();
     }, []);
-
-    const toggleFavorite = async (drillId) => {
-        const currentDrill = drills.find(d => d._id === drillId);
-        if (!currentDrill) return;
-
-        const newValue = !currentDrill.isFavourite;
-
-        try {
-            setDrills(prev =>
-                prev.map(drill =>
-                    drill._id === drillId ? { ...drill, isFavourite: newValue } : drill
-                )
-            );
-
-            await toggleFavourite(drillId, newValue);
-        } catch (err) {
-            console.error(err);
-            // Revert UI on error
-            setDrills(prev =>
-                prev.map(drill =>
-                    drill._id === drillId ? { ...drill, isFavourite: !newValue } : drill
-                )
-            );
-        }
-    };
 
     const handleDrillLongPress = (item) => {
         if (!selectMode) {
@@ -230,8 +205,6 @@ export default function Drills() {
         fetchDrills();
     }, [params.studentId, params.coachId]);
 
-    const favoritesCount = drills.filter(drill => drill.isFavourite).length;
-
     const renderItem = (item) => {
         const isSelected = selectedDrills.includes(item._id);
 
@@ -264,15 +237,6 @@ export default function Drills() {
                             </View>
                         </View>
                     )}
-                    <TouchableOpacity
-                        style={styles.heartIcon}
-                        onPress={() => toggleFavorite(item._id)}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                        <Text style={styles.heartText}>
-                            {item.isFavourite ? '❤️' : '🤍'}
-                        </Text>
-                    </TouchableOpacity>
                 </View>
                 <View style={styles.titleContainer}>
                     <Text style={scheme === 'dark' ? styles.titleDark : styles.title}>{item.title}</Text>
@@ -324,16 +288,6 @@ export default function Drills() {
                     ) : (
                         <Text style={styles.trashButtonText}>🗑️ Delete ({selectedDrills.length})</Text>
                     )}
-                </TouchableOpacity>
-            )}
-
-            {!selectMode && !showUploadForm && (
-                <TouchableOpacity
-                    style={styles.favoritesButton}
-                    onPress={() => router.push('/favourites')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.favoritesButtonText}>❤️ {favoritesCount}</Text>
                 </TouchableOpacity>
             )}
 
@@ -481,28 +435,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: 'Poppins_600SemiBold',
         color: '#fff',
-    },
-    favoritesButton: {
-        position: 'absolute',
-        top: 20,
-        right: 16,
-        backgroundColor: '#ff6b6b',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    favoritesButtonText: {
-        color: '#fff',
-        fontSize: 13,
-        fontFamily: 'Poppins_600SemiBold',
     },
     trashButton: {
         position: 'absolute',
@@ -699,26 +631,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingTop: 0,
         position: 'relative',
-    },
-    heartIcon: {
-        position: 'absolute',
-        right: 5,
-        top: 4,
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.15,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    heartText: {
-        fontSize: 20,
     },
     title: {
         padding: 10,
