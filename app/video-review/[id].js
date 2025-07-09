@@ -37,8 +37,7 @@ const VideoReviewScreen = ({ userId, token }) => {
                 setVideo(found);
 
                 const remote = await getAnnotations(videoId, token);
-                console.log("Remote annotations:", remote);
-                setAnnotations(remote?.length ? remote[0].data : {});
+                setAnnotations(remote?.data);
             } catch (e) {
                 setVideo(null);
                 showAlert('Error', 'Failed to load video or annotations.');

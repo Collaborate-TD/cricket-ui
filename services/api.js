@@ -86,4 +86,17 @@ export const getAnnotations = (videoId, token) =>
 
 export const deleteVideos = (videoIds, userId) =>
     API.delete('/video/delete', { data: { ids: videoIds, userId } });
+
+export const getDrills = (filter = {}) =>
+    API.post('/drill/list', { params: filter });
+
+export const getDrill = (id) =>
+    API.get(`/drill/${id}`);
+
+export const createDrill = (data) =>
+    API.post('/drill/', data);
+
+export const deleteDrills = (drillIds, userId) =>
+    API.delete('/drill/', { data: { ids: drillIds, userId } });
+
 export default API;
