@@ -237,7 +237,7 @@ export default function VideoPreviewSection({
                             <TouchableOpacity
                                 style={[
                                     styles.annotateBtn,
-                                    { backgroundColor: '#4CAF50', zIndex: 250 }
+                                    { backgroundColor: '#4CAF50', zIndex: 300 }
                                 ]}
                                 onPress={() => {
                                     // Save current frame first
@@ -266,7 +266,7 @@ export default function VideoPreviewSection({
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity
-                                style={styles.annotateBtn}
+                                style={[styles.annotateBtn, { zIndex: 300 }]}
                                 onPress={async () => {
                                     if (videoRef.current) {
                                         try {
@@ -291,7 +291,7 @@ export default function VideoPreviewSection({
                     {/* Student View Annotations Button */}
                     {!isCoach && hasAnnotations && !showAnnotationOverlay && (
                         <TouchableOpacity
-                            style={styles.viewAnnotationsBtn}
+                            style={[styles.viewAnnotationsBtn, { zIndex: 300 }]}
                             onPress={handleStudentViewAnnotations}
                         >
                             <Text style={styles.viewAnnotationsBtnText}>View Annotations</Text>
@@ -301,7 +301,7 @@ export default function VideoPreviewSection({
                     {/* Student Exit Annotation View Button */}
                     {!isCoach && showAnnotationOverlay && (
                         <TouchableOpacity
-                            style={[styles.annotateBtn, { backgroundColor: '#FF6B6B' }]}
+                            style={[styles.annotateBtn, { backgroundColor: '#FF6B6B', zIndex: 300 }]}
                             onPress={() => {
                                 setShowAnnotationOverlay(false);
                                 setStudentViewingAnnotations(false);
@@ -312,7 +312,7 @@ export default function VideoPreviewSection({
                     )}
 
                     <TouchableOpacity
-                        style={[styles.exitFullscreenBtn, { zIndex: 250 }]}
+                        style={[styles.exitFullscreenBtn, { zIndex: 300 }]}
                         onPress={() => {
                             setCustomFullscreen(false);
                             setShowAnnotationOverlay(false);
@@ -322,11 +322,10 @@ export default function VideoPreviewSection({
                         <Text style={styles.exitFullscreenText}>Exit Fullscreen</Text>
                     </TouchableOpacity>
 
+                    {/* FIXED: Proper annotation overlay with correct positioning */}
                     {showAnnotationOverlay && (
-                        <View
-                            style={[styles.annotationOverlay, { paddingTop: 80 }]}
-                            pointerEvents="box-none"
-                        >
+                        <View style={styles.annotationOverlayContainer}>
+                            {/* Frame Navigation - Fixed positioning */}
                             <View style={styles.frameNavigationContainer}>
                                 <Text style={styles.frameInfo}>
                                     Frame {currentSecondRef.current + 1} of {Math.min(totalSeconds, 5)} ({currentSecondRef.current + 1}s)
@@ -348,47 +347,10 @@ export default function VideoPreviewSection({
                                 />
                             </View>
 
-                            {/* Show current frame annotations - both drawings and comments */}
-                            {annotations[currentSecondRef.current] && (
-                                <View style={styles.annotationDisplayContainer}>
-                                    {/* Display drawings */}
-                                    {annotations[currentSecondRef.current].drawings && 
-                                     annotations[currentSecondRef.current].drawings.length > 0 && (
-                                        <AnnotationCanvas
-                                            frame={currentSecondRef.current}
-                                            frameData={annotations[currentSecondRef.current] || { drawings: [] }}
-                                            onChange={isCoach ? (newFrameData) => handleAnnotationChange(currentSecondRef.current, newFrameData) : undefined}
-                                            selectedTool={selectedTool}
-                                            selectedColor={selectedColor}
-                                            selectedThickness={selectedThickness}
-                                            readOnly={!isCoach}
-                                        />
-                                    )}
-                                    
-                                    {/* Display comments */}
-                                    {annotations[currentSecondRef.current].comment && (
-                                        <View style={styles.commentDisplayContainer}>
-                                            <Text style={styles.commentLabel}>Coach Comment:</Text>
-                                            <Text style={styles.commentText}>
-                                                {annotations[currentSecondRef.current].comment}
-                                            </Text>
-                                        </View>
-                                    )}
-                                </View>
-                            )}
-
-                            {/* Show message if no annotations for current frame */}
-                            {!annotations[currentSecondRef.current] && (
-                                <View style={styles.noAnnotationContainer}>
-                                    <Text style={styles.noAnnotationText}>
-                                        No annotations for this frame
-                                    </Text>
-                                </View>
-                            )}
-
-                            {/* Coach-only annotation tools */}
-                            {isCoach && (
-                                <>
+                            {/* Video Content Area - This matches the video dimensions exactly */}
+                            <View style={styles.videoContentArea}>
+                                {/* Annotation Canvas - positioned to match video */}
+                                {isCoach && (
                                     <AnnotationCanvas
                                         frame={currentSecondRef.current}
                                         frameData={annotations[currentSecondRef.current] || { drawings: [] }}
@@ -396,32 +358,74 @@ export default function VideoPreviewSection({
                                         selectedTool={selectedTool}
                                         selectedColor={selectedColor}
                                         selectedThickness={selectedThickness}
+                                        style={styles.annotationCanvas}
                                     />
+                                )}
 
-                                    <AnnotationToolbar
+                                {/* Display existing annotations for students */}
+                                {!isCoach && annotations[currentSecondRef.current] && 
+                                 annotations[currentSecondRef.current].drawings && 
+                                 annotations[currentSecondRef.current].drawings.length > 0 && (
+                                    <AnnotationCanvas
+                                        frame={currentSecondRef.current}
+                                        frameData={annotations[currentSecondRef.current] || { drawings: [] }}
                                         selectedTool={selectedTool}
-                                        onSelectTool={handleSelectTool}
                                         selectedColor={selectedColor}
-                                        onSelectColor={setSelectedColor}
                                         selectedThickness={selectedThickness}
-                                        onSelectThickness={setSelectedThickness}
-                                        onAddComment={() => setShowCommentModal(true)}
-                                        onSave={handleSave}
-                                        onExit={() => {
-                                            if (hasSavedFrames) {
-                                                Alert.alert(
-                                                    "Exit Annotation Mode?",
-                                                    "You have annotations that will be saved when you click Save All Annotations.",
-                                                    [
-                                                        { text: "Stay in Annotation Mode", style: "cancel" },
-                                                        { text: "Exit", onPress: () => setShowAnnotationOverlay(false) }
-                                                    ]
-                                                );
-                                            } else {
-                                                setShowAnnotationOverlay(false);
-                                            }
-                                        }}
+                                        readOnly={true}
+                                        style={styles.annotationCanvas}
                                     />
+                                )}
+
+                                {/* Show message if no annotations for current frame */}
+                                {!annotations[currentSecondRef.current] && (
+                                    <View style={styles.noAnnotationContainer}>
+                                        <Text style={styles.noAnnotationText}>
+                                            No annotations for this frame
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+
+                            {/* Comments - Fixed positioning at bottom */}
+                            {annotations[currentSecondRef.current] && annotations[currentSecondRef.current].comment && (
+                                <View style={styles.commentDisplayContainer}>
+                                    <Text style={styles.commentLabel}>Coach Comment:</Text>
+                                    <Text style={styles.commentText}>
+                                        {annotations[currentSecondRef.current].comment}
+                                    </Text>
+                                </View>
+                            )}
+
+                            {/* Coach-only annotation toolbar - Fixed positioning */}
+                            {isCoach && (
+                                <>
+                                    <View style={styles.toolbarContainer}>
+                                        <AnnotationToolbar
+                                            selectedTool={selectedTool}
+                                            onSelectTool={handleSelectTool}
+                                            selectedColor={selectedColor}
+                                            onSelectColor={setSelectedColor}
+                                            selectedThickness={selectedThickness}
+                                            onSelectThickness={setSelectedThickness}
+                                            onAddComment={() => setShowCommentModal(true)}
+                                            onSave={handleSave}
+                                            onExit={() => {
+                                                if (hasSavedFrames) {
+                                                    Alert.alert(
+                                                        "Exit Annotation Mode?",
+                                                        "You have annotations that will be saved when you click Save All Annotations.",
+                                                        [
+                                                            { text: "Stay in Annotation Mode", style: "cancel" },
+                                                            { text: "Exit", onPress: () => setShowAnnotationOverlay(false) }
+                                                        ]
+                                                    );
+                                                } else {
+                                                    setShowAnnotationOverlay(false);
+                                                }
+                                            }}
+                                        />
+                                    </View>
 
                                     <CommentInputModal
                                         visible={showCommentModal}
@@ -556,7 +560,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 18,
         borderRadius: 24,
-        zIndex: 10,
+        zIndex: 300,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
@@ -577,7 +581,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 18,
         borderRadius: 24,
-        zIndex: 10,
+        zIndex: 300,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
@@ -625,7 +629,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 18,
         borderRadius: 24,
-        zIndex: 10,
+        zIndex: 300,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
@@ -664,26 +668,25 @@ const styles = StyleSheet.create({
         color: '#222f3e',
         letterSpacing: 0.5,
     },
-    annotationOverlay: {
+    // FIXED: New annotation overlay structure
+    annotationOverlayContainer: {
         position: 'absolute',
+        top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        top: 0,
-        backgroundColor: 'rgba(0,0,0,0.10)',
         zIndex: 200,
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        paddingTop: 80,
-        width: '100%',
-        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.1)',
     },
     frameNavigationContainer: {
         position: 'absolute',
         top: 80,
-        width: '100%',
-        paddingHorizontal: 16,
-        zIndex: 210,
+        left: 16,
+        right: 16,
+        zIndex: 250,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        borderRadius: 12,
+        padding: 12,
     },
     frameInfo: {
         fontSize: 14,
@@ -692,25 +695,34 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: 'bold',
     },
-    annotationDisplayContainer: {
+    // FIXED: Video content area that matches video dimensions
+    videoContentArea: {
         position: 'absolute',
-        top: '20%',
+        top: 0,
         left: 0,
         right: 0,
-        bottom: '20%',
-        zIndex: 205,
-        alignItems: 'center',
+        bottom: 0,
+        zIndex: 210,
         justifyContent: 'center',
+        alignItems: 'center',
+    },
+    annotationCanvas: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 220,
     },
     commentDisplayContainer: {
         position: 'absolute',
-        bottom: 20,
+        bottom: 80,
         left: 20,
         right: 20,
         backgroundColor: 'rgba(0,0,0,0.8)',
         borderRadius: 12,
         padding: 16,
-        zIndex: 220,
+        zIndex: 250,
     },
     commentLabel: {
         fontSize: 14,
@@ -729,7 +741,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         alignItems: 'center',
-        zIndex: 205,
+        zIndex: 220,
     },
     noAnnotationText: {
         fontSize: 16,
@@ -739,5 +751,13 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 8,
         textAlign: 'center',
+    },
+    toolbarContainer: {
+        position: 'absolute',
+        bottom: 20,
+        left: 0,
+        right: 0,
+        zIndex: 250,
+        paddingHorizontal: 20,
     },
 });
