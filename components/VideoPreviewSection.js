@@ -32,7 +32,7 @@ export default function VideoPreviewSection({
     const [showCommentModal, setShowCommentModal] = useState(false);
     const [comment, setComment] = useState('');
     const [hasSavedFrames, setHasSavedFrames] = useState(false);
-    
+
     // New state for student annotation viewing
     const [studentViewingAnnotations, setStudentViewingAnnotations] = useState(false);
     const [hasAnnotations, setHasAnnotations] = useState(false);
@@ -81,7 +81,7 @@ export default function VideoPreviewSection({
     // Check if annotations exist
     useEffect(() => {
         if (annotations && Object.keys(annotations).length > 0) {
-            const hasValidAnnotations = Object.values(annotations).some(frame => 
+            const hasValidAnnotations = Object.values(annotations).some(frame =>
                 frame && (
                     (Array.isArray(frame.drawings) && frame.drawings.length > 0) ||
                     !!frame.comment
@@ -140,7 +140,7 @@ export default function VideoPreviewSection({
             // Simply assign the new drawings (don't concatenate to avoid duplication)
             updated[second] = {
                 ...updated[second],
-                drawings: newFrameData.drawings, // FIXED: Remove .concat() to prevent duplication
+                drawings: newFrameData.drawings.concat(updated[second].drawings),
                 comment: comment,
             };
             return updated;
@@ -254,7 +254,6 @@ export default function VideoPreviewSection({
                                         };
                                         return updated;
                                     });
-                                    console.log("Saving annotations:", annotations);
                                     // Then save all annotations
                                     if (onSaveFinal) onSaveFinal(annotations);
                                     setShowAnnotationOverlay(false);
@@ -359,23 +358,24 @@ export default function VideoPreviewSection({
                                         selectedColor={selectedColor}
                                         selectedThickness={selectedThickness}
                                         style={styles.annotationCanvas}
+                                        readOnly={false}
                                     />
                                 )}
 
                                 {/* Display existing annotations for students */}
-                                {!isCoach && annotations[currentSecondRef.current] && 
-                                 annotations[currentSecondRef.current].drawings && 
-                                 annotations[currentSecondRef.current].drawings.length > 0 && (
-                                    <AnnotationCanvas
-                                        frame={currentSecondRef.current}
-                                        frameData={annotations[currentSecondRef.current] || { drawings: [] }}
-                                        selectedTool={selectedTool}
-                                        selectedColor={selectedColor}
-                                        selectedThickness={selectedThickness}
-                                        readOnly={true}
-                                        style={styles.annotationCanvas}
-                                    />
-                                )}
+                                {!isCoach && annotations[currentSecondRef.current] &&
+                                    annotations[currentSecondRef.current].drawings &&
+                                    annotations[currentSecondRef.current].drawings.length > 0 && (
+                                        <AnnotationCanvas
+                                            frame={currentSecondRef.current}
+                                            frameData={annotations[currentSecondRef.current] || { drawings: [] }}
+                                            selectedTool={selectedTool}
+                                            selectedColor={selectedColor}
+                                            selectedThickness={selectedThickness}
+                                            readOnly={true}
+                                            style={styles.annotationCanvas}
+                                        />
+                                    )}
 
                                 {/* Show message if no annotations for current frame */}
                                 {!annotations[currentSecondRef.current] && (
@@ -459,19 +459,19 @@ export default function VideoPreviewSection({
                         useNativeControls
                         resizeMode="contain"
                     />
-                    
+
                     {/* Enhanced Student UI */}
                     <View style={styles.controlsContainer}>
-                        <TouchableOpacity 
-                            style={styles.fullscreenBtn} 
+                        <TouchableOpacity
+                            style={styles.fullscreenBtn}
                             onPress={() => setCustomFullscreen(true)}
                         >
                             <Text style={styles.fullscreenBtnText}>Fullscreen</Text>
                         </TouchableOpacity>
-                        
+
                         {/* Show View Annotations button for students when annotations exist */}
                         {!isCoach && hasAnnotations && (
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={styles.viewAnnotationsBtnSmall}
                                 onPress={() => {
                                     setCustomFullscreen(true);
@@ -481,7 +481,7 @@ export default function VideoPreviewSection({
                                 <Text style={styles.viewAnnotationsBtnText}>View Annotations</Text>
                             </TouchableOpacity>
                         )}
-                        
+
                         {/* Show status for students */}
                         {!isCoach && (
                             <View style={styles.statusContainer}>
