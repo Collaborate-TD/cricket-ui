@@ -515,8 +515,8 @@ export default function VideoPreviewSection({
                         )}
                     </View>
 
-                    <Text style={styles.videoTitle}>{video?.title || video?.fileName}</Text>
-                    <Text style={styles.videoId}>Video ID: {video?._id}</Text>
+                    <Text style={styles.videoTitle}>Student: {video?.studentName}</Text>
+                    <Text style={styles.videoId}>{video?.title || video?.fileName}</Text>
                 </View>
             )}
         </View>

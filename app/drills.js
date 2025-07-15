@@ -160,7 +160,7 @@ export default function Drills() {
             // 2. Prepare drill data with uploaded video filename
             const drillData = {
                 title: drillTitle.trim(),
-                description: drillDescription.trim(),
+                desc: drillDescription.trim(),
                 fileName: uploadedVideo?.fileName || '',
                 userId: userId,
             };
