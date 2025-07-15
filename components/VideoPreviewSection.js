@@ -26,9 +26,13 @@ export default function VideoPreviewSection({
     const [isCoach, setIsCoach] = useState(false);
     const [showAnnotationOverlay, setShowAnnotationOverlay] = useState(false);
     const [totalSeconds, setTotalSeconds] = useState(5);
-    const [selectedTool, setSelectedTool] = useState('freehand');
-    const [selectedColor, setSelectedColor] = useState('#FF0000');
-    const [selectedThickness, setSelectedThickness] = useState(4);
+
+    const selectedToolRef = useRef('freehand');
+    const selectedColorRef = useRef('#FF0000');
+    const selectedThicknessRef = useRef(4);
+
+    const annotationCanvasRef = useRef(); // for undo
+
     const [showCommentModal, setShowCommentModal] = useState(false);
     const [comment, setComment] = useState('');
     const [hasSavedFrames, setHasSavedFrames] = useState(false);
@@ -69,6 +73,7 @@ export default function VideoPreviewSection({
                 if (token) {
                     const user = jwtDecode(token);
                     setIsCoach(user.role === 'coach');
+                    console.log('User role:', user.role);
                 }
             } catch (error) {
                 console.error('Error checking coach status:', error);
@@ -111,23 +116,25 @@ export default function VideoPreviewSection({
         }
     }, [annotations, forceUpdate]);
 
-    // Save current frame annotation
-    const handleSave = () => {
+    // Clear entire frame annotation
+    const handleDeleteAll = () => {
+        const second = currentSecondRef.current;
         setAnnotations(prev => {
             const updated = { ...prev };
-            const currentSecond = currentSecondRef.current;
-            if (!updated[currentSecond]) {
-                updated[currentSecond] = { drawings: [], comment: '' };
+            if (!updated[second]) {
+                updated[second] = { drawings: [], comment: '' };
             }
-            updated[currentSecond] = {
-                ...updated[currentSecond],
-                drawings: updated[currentSecond]?.drawings || [],
-                comment: comment,
+            updated[second] = {
+                ...updated[second],
+                drawings: [], // ✅ clear all drawings
             };
             return updated;
         });
-        setHasSavedFrames(true);
+
+        // also trigger canvas re-render
+        forceUpdate(n => n + 1);
     };
+
 
     // FIXED: Correctly handle annotation changes - no more duplication
     const handleAnnotationChange = (second, newFrameData) => {
@@ -140,7 +147,7 @@ export default function VideoPreviewSection({
             // Simply assign the new drawings (don't concatenate to avoid duplication)
             updated[second] = {
                 ...updated[second],
-                drawings: newFrameData.drawings.concat(updated[second].drawings),
+                drawings: newFrameData.drawings,
                 comment: comment,
             };
             return updated;
@@ -148,8 +155,21 @@ export default function VideoPreviewSection({
         setHasSavedFrames(true);
     };
 
-    const handleSelectTool = (tool) => {
-        if (tool === 'freehand') setSelectedTool(tool);
+    // Update only the ref for tool
+    const setSelectedTool = (tool) => {
+        selectedToolRef.current = tool;
+        forceUpdate(n => n + 1); // force update if you want UI to reflect selection
+    };
+    // Update only the ref for color
+    const setSelectedColor = (color) => {
+        selectedColorRef.current = color;
+        forceUpdate(n => n + 1);
+        console.log("Selected color updated:", selectedColorRef.current);
+    };
+    // Update only the ref for thickness
+    const setSelectedThickness = (thickness) => {
+        selectedThicknessRef.current = thickness;
+        forceUpdate(n => n + 1);
     };
 
     // REMOVED: Auto-show annotations during playback for students
@@ -351,15 +371,17 @@ export default function VideoPreviewSection({
                                 {/* Annotation Canvas - positioned to match video */}
                                 {isCoach && (
                                     <AnnotationCanvas
+                                        ref={annotationCanvasRef} // ✅ now added
                                         frame={currentSecondRef.current}
                                         frameData={annotations[currentSecondRef.current] || { drawings: [] }}
                                         onChange={(newFrameData) => handleAnnotationChange(currentSecondRef.current, newFrameData)}
-                                        selectedTool={selectedTool}
-                                        selectedColor={selectedColor}
-                                        selectedThickness={selectedThickness}
+                                        selectedTool={selectedToolRef.current}
+                                        selectedColor={selectedColorRef.current}
+                                        selectedThickness={selectedThicknessRef.current}
                                         style={styles.annotationCanvas}
                                         readOnly={false}
                                     />
+
                                 )}
 
                                 {/* Display existing annotations for students */}
@@ -369,16 +391,16 @@ export default function VideoPreviewSection({
                                         <AnnotationCanvas
                                             frame={currentSecondRef.current}
                                             frameData={annotations[currentSecondRef.current] || { drawings: [] }}
-                                            selectedTool={selectedTool}
-                                            selectedColor={selectedColor}
-                                            selectedThickness={selectedThickness}
+                                            selectedTool={selectedToolRef.current}
+                                            selectedColor={selectedColorRef.current}
+                                            selectedThickness={selectedThicknessRef.current}
                                             readOnly={true}
                                             style={styles.annotationCanvas}
                                         />
                                     )}
 
                                 {/* Show message if no annotations for current frame */}
-                                {!annotations[currentSecondRef.current] && (
+                                {!isCoach && !annotations[currentSecondRef.current] && (
                                     <View style={styles.noAnnotationContainer}>
                                         <Text style={styles.noAnnotationText}>
                                             No annotations for this frame
@@ -402,14 +424,14 @@ export default function VideoPreviewSection({
                                 <>
                                     <View style={styles.toolbarContainer}>
                                         <AnnotationToolbar
-                                            selectedTool={selectedTool}
-                                            onSelectTool={handleSelectTool}
-                                            selectedColor={selectedColor}
+                                            selectedTool={selectedToolRef.current}
+                                            onSelectTool={setSelectedTool}
+                                            selectedColor={selectedColorRef.current}
                                             onSelectColor={setSelectedColor}
-                                            selectedThickness={selectedThickness}
+                                            selectedThickness={selectedThicknessRef.current}
                                             onSelectThickness={setSelectedThickness}
                                             onAddComment={() => setShowCommentModal(true)}
-                                            onSave={handleSave}
+                                            onDeleteAll={handleDeleteAll}
                                             onExit={() => {
                                                 if (hasSavedFrames) {
                                                     Alert.alert(
@@ -424,6 +446,7 @@ export default function VideoPreviewSection({
                                                     setShowAnnotationOverlay(false);
                                                 }
                                             }}
+                                            onUndo={() => annotationCanvasRef.current?.undoLastDrawing()}
                                         />
                                     </View>
 
