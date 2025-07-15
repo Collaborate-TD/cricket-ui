@@ -5,6 +5,7 @@ import {
     StyleSheet,
     TouchableOpacity,
     Image,
+    Alert,
 } from 'react-native';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
@@ -24,6 +25,22 @@ function validatePassword(password) {
     return /^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{6,}$/.test(password);
 }
 
+// Function to validate name input (only alphabetic characters and spaces)
+const validateNameInput = (text) => {
+    // Allow only letters (A-Z, a-z) and spaces
+    const nameRegex = /^[A-Za-z\s]*$/;
+    return nameRegex.test(text);
+};
+
+// Function to show invalid character popup
+const showInvalidCharacterAlert = (fieldName) => {
+    Alert.alert(
+        'Invalid Character',
+        `${fieldName} can only contain letters (A-Z, a-z) and spaces. Special characters and numbers are not allowed.`,
+        [{ text: 'OK', style: 'default' }]
+    );
+};
+
 export default function Register() {
     const router = useRouter();
     const [userId, setUserId] = useState('');
@@ -36,18 +53,80 @@ export default function Register() {
     const [errors, setErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
 
+    // Enhanced handlers for name inputs
+    const handleFirstNameChange = (text) => {
+        // Filter out invalid characters and only keep valid ones
+        const filteredText = text.replace(/[^A-Za-z\s]/g, '');
+        
+        // Show alert if invalid characters were removed
+        if (text !== filteredText && text.length > 0) {
+            showInvalidCharacterAlert('First Name');
+        }
+        
+        setFirstName(filteredText);
+        // Clear error when user starts typing
+        if (errors.firstName) {
+            setErrors(prev => ({ ...prev, firstName: '' }));
+        }
+    };
+
+    const handleLastNameChange = (text) => {
+        // Filter out invalid characters and only keep valid ones
+        const filteredText = text.replace(/[^A-Za-z\s]/g, '');
+        
+        // Show alert if invalid characters were removed
+        if (text !== filteredText && text.length > 0) {
+            showInvalidCharacterAlert('Last Name');
+        }
+        
+        setLastName(filteredText);
+        // Clear error when user starts typing
+        if (errors.lastName) {
+            setErrors(prev => ({ ...prev, lastName: '' }));
+        }
+    };
+
     const validate = () => {
         const newErrors = {};
-        if (!userId) newErrors.userName = 'User name is required';
-        if (!firstName) newErrors.firstName = 'First name is required';
-        if (!lastName) newErrors.lastName = 'Last name is required';
-        if (!email) newErrors.email = 'Email is required';
-        else if (!validateEmail(email)) newErrors.email = 'Invalid email address';
-        if (!password) newErrors.password = 'Password is required';
-        else if (!validatePassword(password))
-            newErrors.password =
-                'Password must be at least 6 characters, include a number and a special character';
-        if (!role) newErrors.role = 'Role is required';
+        
+        // Validate user name
+        if (!userId.trim()) {
+            newErrors.userName = 'User name is required';
+        }
+        
+        // Validate first name
+        if (!firstName.trim()) {
+            newErrors.firstName = 'First name is required';
+        } else if (!validateNameInput(firstName)) {
+            newErrors.firstName = 'First name can only contain letters and spaces';
+        }
+        
+        // Validate last name
+        if (!lastName.trim()) {
+            newErrors.lastName = 'Last name is required';
+        } else if (!validateNameInput(lastName)) {
+            newErrors.lastName = 'Last name can only contain letters and spaces';
+        }
+        
+        // Validate email
+        if (!email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!validateEmail(email)) {
+            newErrors.email = 'Invalid email address';
+        }
+        
+        // Validate password
+        if (!password) {
+            newErrors.password = 'Password is required';
+        } else if (!validatePassword(password)) {
+            newErrors.password = 'Password must be at least 6 characters, include a number and a special character';
+        }
+        
+        // Validate role
+        if (!role) {
+            newErrors.role = 'Role is required';
+        }
+        
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -103,7 +182,7 @@ export default function Register() {
                     <CustomInput
                         placeholder="First Name"
                         value={firstName}
-                        onChangeText={setFirstName}
+                        onChangeText={handleFirstNameChange}
                     />
                     {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
                 </View>
@@ -111,7 +190,7 @@ export default function Register() {
                     <CustomInput
                         placeholder="Last Name"
                         value={lastName}
-                        onChangeText={setLastName}
+                        onChangeText={handleLastNameChange}
                     />
                     {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
                 </View>

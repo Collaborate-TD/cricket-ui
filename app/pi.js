@@ -13,6 +13,7 @@ import {
     UIManager,
     useColorScheme,
     Image,
+    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
@@ -94,26 +95,82 @@ export default function PersonalInfo() {
         fetchData();
     }, []);
 
+    // Function to validate name input (only alphabetic characters and spaces)
+    const validateNameInput = (text) => {
+        // Allow only letters (A-Z, a-z) and spaces
+        const nameRegex = /^[A-Za-z\s]*$/;
+        return nameRegex.test(text);
+    };
+
+    // Function to show invalid character popup
+    const showInvalidCharacterAlert = (fieldName) => {
+        Alert.alert(
+            'Invalid Character',
+            `${fieldName} can only contain letters (A-Z, a-z) and spaces. Special characters and numbers are not allowed.`,
+            [{ text: 'OK', style: 'default' }]
+        );
+    };
+
+    // Enhanced handlers for name inputs
+    const handleFirstNameChange = (text) => {
+        // Filter out invalid characters and only keep valid ones
+        const filteredText = text.replace(/[^A-Za-z\s]/g, '');
+        
+        // Show alert if invalid characters were removed
+        if (text !== filteredText && text.length > 0) {
+            showInvalidCharacterAlert('First Name');
+        }
+        
+        setFirstName(filteredText);
+        setFirstNameError('');
+    };
+
+    const handleLastNameChange = (text) => {
+        // Filter out invalid characters and only keep valid ones
+        const filteredText = text.replace(/[^A-Za-z\s]/g, '');
+        
+        // Show alert if invalid characters were removed
+        if (text !== filteredText && text.length > 0) {
+            showInvalidCharacterAlert('Last Name');
+        }
+        
+        setLastName(filteredText);
+        setLastNameError('');
+    };
+
     const validate = () => {
         let valid = true;
+        
+        // Validate first name
         if (!firstName.trim()) {
             setFirstNameError('First name cannot be empty');
+            valid = false;
+        } else if (!validateNameInput(firstName)) {
+            setFirstNameError('First name can only contain letters and spaces');
             valid = false;
         } else {
             setFirstNameError('');
         }
+        
+        // Validate last name
         if (!lastName.trim()) {
             setLastNameError('Last name cannot be empty');
+            valid = false;
+        } else if (!validateNameInput(lastName)) {
+            setLastNameError('Last name can only contain letters and spaces');
             valid = false;
         } else {
             setLastNameError('');
         }
+        
+        // Validate username
         if (!userName.trim()) {
             setUserNameError('Username cannot be empty');
             valid = false;
         } else {
             setUserNameError('');
         }
+        
         return valid;
     };
 
@@ -217,7 +274,7 @@ export default function PersonalInfo() {
                                     <TextInput
                                         style={scheme === 'dark' ? styles.inputFirstNameDark : styles.inputFirstName}
                                         value={firstName}
-                                        onChangeText={setFirstName}
+                                        onChangeText={handleFirstNameChange}
                                         placeholder="First Name"
                                         placeholderTextColor={scheme === 'dark' ? '#888' : '#b0b0b0'}
                                         autoCapitalize="words"
@@ -225,7 +282,7 @@ export default function PersonalInfo() {
                                     <TextInput
                                         style={scheme === 'dark' ? styles.inputLastNameDark : styles.inputLastName}
                                         value={lastName}
-                                        onChangeText={setLastName}
+                                        onChangeText={handleLastNameChange}
                                         placeholder="Last Name"
                                         placeholderTextColor={scheme === 'dark' ? '#888' : '#b0b0b0'}
                                         autoCapitalize="words"
