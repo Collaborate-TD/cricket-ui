@@ -89,7 +89,7 @@ const DrillReviewScreen = () => {
                         <Text style={styles.fullscreenBtnText}>Fullscreen</Text>
                     </TouchableOpacity>
                     <Text style={styles.videoTitle}>{drill.title || drill.fileName}</Text>
-                    <Text style={styles.videoId}>Drill ID: {drill._id}</Text>
+                    <Text style={styles.videoId}>{drill.desc}</Text>
                     {drill.description ? (
                         <Text style={styles.description}>{drill.description}</Text>
                     ) : null}
