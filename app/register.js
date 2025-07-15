@@ -174,7 +174,7 @@ export default function Register() {
                     <CustomInput
                         placeholder="User Name"
                         value={userId}
-                        onChangeText={setUserId}
+                        onChangeText={text => setUserId(text.trim())}
                     />
                     {errors.userName && <Text style={styles.errorText}>{errors.userName}</Text>}
                 </View>
@@ -182,7 +182,7 @@ export default function Register() {
                     <CustomInput
                         placeholder="First Name"
                         value={firstName}
-                        onChangeText={handleFirstNameChange}
+                        onChangeText={text => handleFirstNameChange(text.trim())}
                     />
                     {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
                 </View>
@@ -190,7 +190,7 @@ export default function Register() {
                     <CustomInput
                         placeholder="Last Name"
                         value={lastName}
-                        onChangeText={handleLastNameChange}
+                        onChangeText={text => handleLastNameChange(text.trim())}
                     />
                     {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
                 </View>
@@ -198,7 +198,7 @@ export default function Register() {
                     <CustomInput
                         placeholder="Email"
                         value={email}
-                        onChangeText={setEmail}
+                        onChangeText={text => setEmail(text.trim())}
                         keyboardType="email-address"
                     />
                     {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
@@ -207,7 +207,7 @@ export default function Register() {
                     <CustomInput
                         placeholder="Password"
                         value={password}
-                        onChangeText={setPassword}
+                        onChangeText={text => setPassword(text.trim())}
                         secureTextEntry={!showPassword}
                         inputStyle={styles.passwordInput}
                     />
