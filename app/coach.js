@@ -138,6 +138,11 @@ export default function Coach() {
                         onPress={() => router.push('/favourites')}
                     />
                     <MenuItem
+                        icon="🏏"
+                        label="Drills"
+                        onPress={() => router.push('/drills')}
+                    />
+                    <MenuItem
                         icon="⚙️"
                         label="Settings"
                         onPress={() => router.push('/settings')}

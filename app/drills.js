@@ -10,7 +10,7 @@ import {
     TextInput,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getDrills, deleteDrills, uploadDrill } from '../services/api';
+import { getDrills, deleteDrills, createDrill } from '../services/api';
 import { getToken } from '../utils/tokenStorage';
 import { jwtDecode } from 'jwt-decode';
 import { Video } from 'expo-av';
@@ -98,7 +98,6 @@ export default function Drills() {
     const deleteSelectedDrills = async () => {
         setDeleting(true);
         try {
-            console.log('Deleting drills:', selectedDrills);
             await deleteDrills(selectedDrills, userId);
 
             setDrills(prev => prev.filter(drill => !selectedDrills.includes(drill._id)));
@@ -146,17 +145,23 @@ export default function Drills() {
 
             // 1. Upload the video file to temp folder
             let uploadedVideo = null;
-            if (selectedVideo) {
-                const uploadedData = await uploadDrillVideo(selectedVideo); // Should return { fileName: ... }
-                console.log('Uploaded video data:', uploadedData);
-                uploadedVideo = uploadedData.fileName || {};
+            try {
+                const uploadedData = await uploadDrillVideo(selectedVideo);
+                if (!uploadedData || !uploadedData.fileName) {
+                    throw new Error('Video upload failed or fileName missing.');
+                }
+                uploadedVideo = uploadedData?.fileName || '';
+            } catch (uploadErr) {
+                showAlert('Error', 'Failed to upload video. Please try again.');
+                setUploading(false);
+                return;
             }
 
             // 2. Prepare drill data with uploaded video filename
             const drillData = {
                 title: drillTitle.trim(),
                 description: drillDescription.trim(),
-                fileName: uploadedVideo ? uploadedVideo.fileName : '', // or whatever your API returns
+                fileName: uploadedVideo?.fileName || '',
                 userId: userId,
             };
 
@@ -215,10 +220,16 @@ export default function Drills() {
                     scheme === 'dark' ? styles.cardDark : styles.card,
                     isSelected && styles.selectedCard
                 ]}
-                onPress={() => router.push(`/drill-review/${item._id}`)}
+                onPress={() => {
+                    if (selectMode) {
+                        toggleDrillSelection(item._id);
+                    } else {
+                        router.push(`/drill-review/${item._id}`);
+                    }
+                }}
                 onLongPress={() => handleDrillLongPress(item)}
                 activeOpacity={0.9}
-                delayLongPress={2000}
+                delayLongPress={500}
             >
                 <View style={{ position: 'relative' }}>
                     <Video

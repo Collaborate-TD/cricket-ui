@@ -59,7 +59,7 @@ export default function Login() {
                     <CustomInput
                         placeholder="Username or Email"
                         value={userData}
-                        onChangeText={setUserData}
+                        onChangeText={text => setUserData(text.trim())}
                         error={errors.userData}
                         style={styles.inputBox}
                         inputStyle={styles.inputText}
@@ -72,7 +72,7 @@ export default function Login() {
                     <CustomInput
                         placeholder="Password"
                         value={password}
-                        onChangeText={setPassword}
+                        onChangeText={text => setPassword(text.trim())}
                         secureTextEntry={!showPassword}
                         error={errors.password}
                         style={styles.inputBox}
