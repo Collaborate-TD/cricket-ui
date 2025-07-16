@@ -36,7 +36,7 @@ export default function StudentList() {
     const router = useRouter();
 
     const truncate = (str, maxLength) =>
-        str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
+        str && str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
 
     const refreshStudentLists = async (cid) => {
         setLoading(true);
@@ -142,12 +142,31 @@ export default function StudentList() {
         }
     };
 
-    // StudentCard component
-    const StudentCard = ({ student, children }) => (
-        <View style={scheme === 'dark' ? styles.studentCardDark : styles.studentCardLight}>
-            <View>
+    // ApprovedStudentCard component for matched students (clickable)
+    const ApprovedStudentCard = ({ student, children }) => (
+        <TouchableOpacity
+            style={scheme === 'dark' ? styles.studentCardDark : styles.studentCardLight}
+            onPress={() => handleViewProfile(student._id)}
+            activeOpacity={0.7}
+        >
+            <View style={styles.studentInfo}>
                 <Text style={scheme === 'dark' ? styles.studentNameDark : styles.studentNameLight}>
-                    {truncate(`${student.firstName} ${student.lastName}`, 15)}
+                    {truncate(`${student.firstName} ${student.lastName}`, 20)}
+                </Text>
+                <Text style={scheme === 'dark' ? styles.studentEmailDark : styles.studentEmailLight}>
+                    {student.email || ''}
+                </Text>
+            </View>
+            <View style={styles.buttonsRow}>{children}</View>
+        </TouchableOpacity>
+    );
+
+    // RequestStudentCard component for unmatched students (non-clickable)
+    const RequestStudentCard = ({ student, children }) => (
+        <View style={scheme === 'dark' ? styles.studentCardDark : styles.studentCardLight}>
+            <View style={styles.studentInfo}>
+                <Text style={scheme === 'dark' ? styles.studentNameDark : styles.studentNameLight}>
+                    {truncate(`${student.firstName} ${student.lastName}`, 20)}
                 </Text>
                 <Text style={scheme === 'dark' ? styles.studentEmailDark : styles.studentEmailLight}>
                     {student.email || ''}
@@ -190,20 +209,17 @@ export default function StudentList() {
                     </Text>
                 ) : (
                     matchedStudents.map((student) => (
-                        <StudentCard key={student.userId || student._id} student={student}>
+                        <ApprovedStudentCard key={student.userId || student._id} student={student}>
                             <TouchableOpacity
-                                onPress={() => handleViewProfile(student._id)}
-                                style={scheme === 'dark' ? styles.viewBtnDark : styles.viewBtnLight}
-                            >
-                                <Text style={scheme === 'dark' ? styles.actionBtnTextDark : styles.actionBtnTextLight}>View</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => handleRemoveStudent(student, `${student.firstName} ${student.lastName}`)}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStudent(student, `${student.firstName} ${student.lastName}`);
+                                }}
                                 style={scheme === 'dark' ? styles.removeBtnDark : styles.removeBtnLight}
                             >
                                 <Text style={scheme === 'dark' ? styles.removeBtnTextDark : styles.removeBtnTextLight}>Remove</Text>
                             </TouchableOpacity>
-                        </StudentCard>
+                        </ApprovedStudentCard>
                     ))
                 )}
 
@@ -216,7 +232,7 @@ export default function StudentList() {
                     </Text>
                 ) : (
                     unmatchedStudents.map((student) => (
-                        <StudentCard key={student.userId || student._id} student={student}>
+                        <RequestStudentCard key={student.userId || student._id} student={student}>
                             {student.status === 'requested' && student.requestType === 'sent' ? (
                                 <Text style={scheme === 'dark' ? styles.pendingTextDark : styles.pendingTextLight}>Pending</Text>
                             ) : student.status === 'requested' && student.requestType === 'received' ? (
@@ -252,7 +268,7 @@ export default function StudentList() {
                                     <Text style={styles.btnText}>Add</Text>
                                 </TouchableOpacity>
                             )}
-                        </StudentCard>
+                        </RequestStudentCard>
                     ))
                 )}
             </ScrollView>
@@ -409,6 +425,11 @@ const styles = StyleSheet.create({
         borderColor: '#2e3350',
     },
 
+    // Student info container
+    studentInfo: {
+        flex: 1,
+    },
+
     // Student name styles
     studentNameLight: {
         fontSize: 20,
@@ -446,26 +467,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 
-    // Action button styles
-    viewBtnLight: {
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        borderRadius: 8,
-        borderWidth: 1.5,
-        marginLeft: 4,
-        backgroundColor: 'transparent',
-        borderColor: '#1976d2',
-    },
-    viewBtnDark: {
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        borderRadius: 8,
-        borderWidth: 1.5,
-        marginLeft: 4,
-        backgroundColor: 'transparent',
-        borderColor: '#3b5998',
-    },
-
     // Remove button styles
     removeBtnLight: {
         paddingHorizontal: 14,
@@ -495,18 +496,6 @@ const styles = StyleSheet.create({
     removeBtnTextDark: {
         fontSize: 16,
         color: '#dc3545',
-        fontWeight: '600',
-    },
-
-    // Action button text styles
-    actionBtnTextLight: {
-        fontSize: 16,
-        color: '#1976d2',
-        fontWeight: '600',
-    },
-    actionBtnTextDark: {
-        fontSize: 16,
-        color: '#3b5998',
         fontWeight: '600',
     },
 
