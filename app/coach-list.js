@@ -139,7 +139,7 @@ export default function CoachList() {
     };
 
     const truncate = (str, maxLength) =>
-        str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
+        str && str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
 
     if (!fontsLoaded) {
         return (
@@ -149,12 +149,31 @@ export default function CoachList() {
         );
     }
 
-    // Single coach card component
-    const CoachCard = ({ coach, children }) => (
-        <View style={scheme === 'dark' ? styles.coachCardDark : styles.coachCardLight}>
-            <View>
+    // Single coach card component for approved coaches (clickable)
+    const ApprovedCoachCard = ({ coach, children }) => (
+        <TouchableOpacity
+            style={scheme === 'dark' ? styles.coachCardDark : styles.coachCardLight}
+            onPress={() => handleViewProfile(coach._id)}
+            activeOpacity={0.7}
+        >
+            <View style={styles.coachInfo}>
                 <Text style={scheme === 'dark' ? styles.coachNameDark : styles.coachNameLight}>
-                    {truncate(`${coach.firstName} ${coach.lastName}`, 15)}
+                    {truncate(`${coach.firstName} ${coach.lastName}`, 20)}
+                </Text>
+                <Text style={scheme === 'dark' ? styles.coachEmailDark : styles.coachEmailLight}>
+                    {coach.email || ''}
+                </Text>
+            </View>
+            <View style={styles.buttonsRow}>{children}</View>
+        </TouchableOpacity>
+    );
+
+    // Single coach card component for request list (non-clickable)
+    const RequestCoachCard = ({ coach, children }) => (
+        <View style={scheme === 'dark' ? styles.coachCardDark : styles.coachCardLight}>
+            <View style={styles.coachInfo}>
+                <Text style={scheme === 'dark' ? styles.coachNameDark : styles.coachNameLight}>
+                    {truncate(`${coach.firstName} ${coach.lastName}`, 20)}
                 </Text>
                 <Text style={scheme === 'dark' ? styles.coachEmailDark : styles.coachEmailLight}>
                     {coach.email || ''}
@@ -191,20 +210,17 @@ export default function CoachList() {
                     </Text>
                 ) : (
                     coaches.map((coach) => (
-                        <CoachCard key={coach._id} coach={coach}>
+                        <ApprovedCoachCard key={coach._id} coach={coach}>
                             <TouchableOpacity
-                                onPress={() => handleViewProfile(coach._id)}
-                                style={scheme === 'dark' ? styles.viewBtnDark : styles.viewBtnLight}
-                            >
-                                <Text style={scheme === 'dark' ? styles.actionBtnTextDark : styles.actionBtnTextLight}>View</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => handleRemoveCoach(coach, `${coach.firstName} ${coach.lastName}`)}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveCoach(coach, `${coach.firstName} ${coach.lastName}`);
+                                }}
                                 style={scheme === 'dark' ? styles.removeBtnDark : styles.removeBtnLight}
                             >
                                 <Text style={scheme === 'dark' ? styles.removeBtnTextDark : styles.removeBtnTextLight}>Remove</Text>
                             </TouchableOpacity>
-                        </CoachCard>
+                        </ApprovedCoachCard>
                     ))
                 )}
 
@@ -218,7 +234,7 @@ export default function CoachList() {
                     </Text>
                 ) : (
                     myRequests.map((coach) => (
-                        <CoachCard key={coach._id} coach={coach}>
+                        <RequestCoachCard key={coach._id} coach={coach}>
                             {coach.status === 'requested' && coach.requestType === 'sent' ? (
                                 <Text style={scheme === 'dark' ? styles.pendingTextDark : styles.pendingTextLight}>Pending</Text>
                             ) : coach.status === 'requested' && coach.requestType === 'received' ? (
@@ -254,11 +270,10 @@ export default function CoachList() {
                                     <Text style={styles.btnText}>Add</Text>
                                 </TouchableOpacity>
                             )}
-                        </CoachCard>
+                        </RequestCoachCard>
                     ))
                 )}
             </ScrollView>
-
 
             {/* Profile Modal */}
             <Modal
@@ -415,6 +430,11 @@ const styles = StyleSheet.create({
         borderColor: '#2e3350',
     },
 
+    // Coach info container
+    coachInfo: {
+        flex: 1,
+    },
+
     // Coach name styles
     coachNameLight: {
         fontSize: 20,
@@ -454,26 +474,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 
-    // Action button styles
-    viewBtnLight: {
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        borderRadius: 8,
-        borderWidth: 1.5,
-        marginLeft: 4,
-        backgroundColor: 'transparent',
-        borderColor: '#1976d2',
-    },
-    viewBtnDark: {
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        borderRadius: 8,
-        borderWidth: 1.5,
-        marginLeft: 4,
-        backgroundColor: 'transparent',
-        borderColor: '#3b5998',
-    },
-
     // Remove button styles
     removeBtnLight: {
         paddingHorizontal: 14,
@@ -503,18 +503,6 @@ const styles = StyleSheet.create({
     removeBtnTextDark: {
         fontSize: 16,
         color: '#dc3545',
-        fontFamily: 'Poppins_600SemiBold',
-    },
-
-    // Action button text styles
-    actionBtnTextLight: {
-        fontSize: 16,
-        color: '#1976d2',
-        fontFamily: 'Poppins_600SemiBold',
-    },
-    actionBtnTextDark: {
-        fontSize: 16,
-        color: '#3b5998',
         fontFamily: 'Poppins_600SemiBold',
     },
 
