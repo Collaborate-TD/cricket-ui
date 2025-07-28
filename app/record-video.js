@@ -1,0 +1,166 @@
+import React, { useRef, useState, useEffect } from 'react';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+} from 'react-native';
+import { useCameraPermissions, useMicrophonePermissions, CameraView } from 'expo-camera';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+import { getToken } from '../utils/tokenStorage';
+import { jwtDecode } from 'jwt-decode';
+import { uploadCaptureVideo } from '../services/api';
+import { showAlert } from '../utils/alertMessage';
+
+export default function RecordVideoScreen() {
+    const cameraRef = useRef(null);
+    const [permission, requestPermission] = useCameraPermissions();
+    const [isReady, setIsReady] = useState(false);
+    const [recording, setRecording] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const router = useRouter();
+    const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions();
+    const params = useLocalSearchParams();
+
+    useEffect(() => {
+        if (!permission) requestPermission();
+    }, [permission]);
+
+    useEffect(() => {
+        if (!microphonePermission) requestMicrophonePermission();
+    }, [microphonePermission]);
+
+    const uploadVideo = async (uri) => {
+        try {
+            const formData = new FormData();
+
+            formData.append('videos', {
+                uri,
+                name: `video_${Date.now()}.mp4`,
+                type: 'video/mp4',
+            });
+
+            // Get user info from JWT token
+            const token = await getToken();
+            const user = jwtDecode(token);
+
+            // Always use params.studentId and params.coachId if present, otherwise fallback to user._id
+            const studentId = params.studentId || user._id || user.id;
+            const coachId = params.coachId || user._id || user.id;
+
+            formData.append('studentId', studentId);
+            formData.append('coachId', coachId);
+
+            const response = await uploadCaptureVideo(formData);
+            if (response.status !== 201) {
+                throw new Error(`Upload failed with status ${response.status}`);
+            }
+
+            showAlert('Success', 'Video uploaded successfully!');
+            router.replace('/all-videos');
+        } catch (err) {
+            console.error(err);
+            showAlert('Error', 'Failed to upload video.');
+        }
+    };
+
+    const startRecording = async () => {
+        if (!cameraRef.current || recording || !isReady) return;
+
+        setRecording(true);
+        setLoading(true);
+
+        try {
+            const video = await cameraRef.current.recordAsync({
+                maxDuration: 5,
+                quality: '480p',
+            });
+
+            await uploadVideo(video.uri);
+        } catch (err) {
+            console.error('Recording error:', err);
+            showAlert('Error', err.message || 'Recording failed');
+        } finally {
+            setRecording(false);
+            setLoading(false);
+        }
+    };
+
+    if (!permission?.granted) {
+        return (
+            <View style={styles.center}>
+                <Text>No access to camera</Text>
+                <TouchableOpacity onPress={requestPermission}>
+                    <Text style={styles.permissionText}>Grant Permission</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            <CameraView
+                ref={cameraRef}
+                style={styles.camera}
+                mode="video"
+                facing="back"
+                onCameraReady={() => setIsReady(true)}
+            />
+            <View style={styles.controls}>
+                <TouchableOpacity
+                    style={styles.recordBtn}
+                    onPress={startRecording}
+                    disabled={!isReady || loading || recording}
+                >
+                    <Text style={styles.recordText}>
+                        {loading || recording ? 'Recording...' : 'Record 5s'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    camera: {
+        flex: 1,
+    },
+    controls: {
+        position: 'absolute',
+        bottom: 30,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+    },
+    recordBtn: {
+        backgroundColor: '#1976d2',
+        padding: 20,
+        borderRadius: 50,
+    },
+    recordText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    permissionText: {
+        color: 'blue',
+    },
+    menuIconCircle: {
+
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+});
