@@ -49,11 +49,11 @@ export const uploadProfilePhotoAPI = (formData) =>
     API.post('/file/general-upload', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
-            'Accept': '*/*',
-            'Cache-Control': 'no-cache',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'User-Agent': 'PostmanRuntime/7.41.1',
+            // 'Accept': '*/*',
+            // 'Cache-Control': 'no-cache',
+            // 'Accept-Encoding': 'gzip, deflate, br',
+            // 'Connection': 'keep-alive',
+            // 'User-Agent': 'PostmanRuntime/7.41.1',
         },
     });
 export const toggleFavourite = (videoId, params) => {

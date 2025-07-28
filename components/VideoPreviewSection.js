@@ -73,7 +73,6 @@ export default function VideoPreviewSection({
                 if (token) {
                     const user = jwtDecode(token);
                     setIsCoach(user.role === 'coach');
-                    console.log('User role:', user.role);
                 }
             } catch (error) {
                 console.error('Error checking coach status:', error);
@@ -164,7 +163,6 @@ export default function VideoPreviewSection({
     const setSelectedColor = (color) => {
         selectedColorRef.current = color;
         forceUpdate(n => n + 1);
-        console.log("Selected color updated:", selectedColorRef.current);
     };
     // Update only the ref for thickness
     const setSelectedThickness = (thickness) => {
@@ -515,7 +513,9 @@ export default function VideoPreviewSection({
                         )}
                     </View>
 
-                    <Text style={styles.videoTitle}>Student: {video?.studentName}</Text>
+                    <Text style={styles.videoTitle}>
+                        {isCoach ? `Student: ${video?.studentName}` : `Coach: ${video?.coachName}`}
+                    </Text>
                     <Text style={styles.videoId}>{video?.title || video?.fileName}</Text>
                 </View>
             )}

@@ -59,9 +59,7 @@ const AnnotationCanvas = forwardRef(
         /* expose undo to parent component */
         useImperativeHandle(ref, () => ({
             undoLastDrawing: () => {
-                console.log('Undo called'); // 👈 check if this prints
                 if (frameData?.drawings?.length) {
-                    console.log('Current drawings');
                     onChange({
                         drawings: frameData.drawings.slice(0, -1),
                     });
