@@ -88,7 +88,6 @@ const VideoReviewScreen = ({ userId, token }) => {
                 data: annotations,
             }
 
-            console.log("Final annotations to save:", body);
             await addAnnotation(videoId, body, token);
 
             showAlert("Success", "All annotations have been saved successfully!");
