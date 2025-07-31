@@ -113,13 +113,6 @@ Login → View Feedback → Watch Video + Comments → Review Drill Suggestions
 
 **Back End (master):** [https://github.com/Collaborate-TD/cricketlog-server](https://github.com/Collaborate-TD/cricketlog-server)
 
----
-
-## 🖥 Backend GitHub Repository
-
-**Back End (master):** [https://github.com/Collaborate-TD/cricketlog-server](https://github.com/Collaborate-TD/cricketlog-server)
-
-
 ## 🧩 Deployment Instructions
 
 ### Prerequisites
@@ -141,10 +134,6 @@ Login → View Feedback → Watch Video + Comments → Review Drill Suggestions
 2. npm start
 
 Note: If you encounter issues after the first run, adjust your .env file and run npm start again.
-
----
-
-
 
 ---
 
