@@ -110,6 +110,11 @@ Login → View Feedback → Watch Video + Comments → Review Drill Suggestions
 
 ---
 
+## 🖥 Backend GitHub Repository
+
+**Back End (master):** [https://github.com/Collaborate-TD/cricketlog-server](https://github.com/Collaborate-TD/cricketlog-server)
+
+
 ## 🧩 Deployment Instructions
 
 ### Prerequisites
@@ -124,6 +129,14 @@ Login → View Feedback → Watch Video + Comments → Review Drill Suggestions
 2. Install dependencies (both backend and frontend)  
 3. Set up environment variables in `.env`  
 4. Start backend and frontend servers
+
+### Running the Project
+
+```bash
+npm install
+npm start
+
+Note: If you encounter issues after the first run, adjust your .env file and run npm start again.
 
 ---
 
