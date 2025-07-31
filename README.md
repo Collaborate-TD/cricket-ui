@@ -109,6 +109,11 @@ Login → Select Student → Record Clip → Annotate → Add Feedback → Save 
 Login → View Feedback → Watch Video + Comments → Review Drill Suggestions
 
 ---
+## 🖥 Backend GitHub Repository
+
+**Back End (master):** [https://github.com/Collaborate-TD/cricketlog-server](https://github.com/Collaborate-TD/cricketlog-server)
+
+---
 
 ## 🖥 Backend GitHub Repository
 
@@ -132,9 +137,8 @@ Login → View Feedback → Watch Video + Comments → Review Drill Suggestions
 
 ### Running the Project
 
-```bash
-npm install
-npm start
+1. npm install  
+2. npm start
 
 Note: If you encounter issues after the first run, adjust your .env file and run npm start again.
 
