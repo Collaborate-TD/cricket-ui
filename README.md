@@ -109,6 +109,9 @@ Login → Select Student → Record Clip → Annotate → Add Feedback → Save 
 Login → View Feedback → Watch Video + Comments → Review Drill Suggestions
 
 ---
+## 🖥 Backend GitHub Repository
+
+**Back End (master):** [https://github.com/Collaborate-TD/cricketlog-server](https://github.com/Collaborate-TD/cricketlog-server)
 
 ## 🧩 Deployment Instructions
 
@@ -125,9 +128,12 @@ Login → View Feedback → Watch Video + Comments → Review Drill Suggestions
 3. Set up environment variables in `.env`  
 4. Start backend and frontend servers
 
----
+### Running the Project
 
+1. npm install  
+2. npm start
 
+Note: If you encounter issues after the first run, adjust your .env file and run npm start again.
 
 ---
 
